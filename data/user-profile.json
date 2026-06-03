@@ -1,0 +1,34 @@
+{
+  "likes": [
+    "techno, hard techno, industrial, trance, interesting nightlife",
+    "solo travel",
+    "specialty coffee",
+    "art museums / street art / flea markets",
+    "horse riding",
+    "walkable cities",
+    "slightly weird or liminal places",
+    "low-stress itineraries with one main plan per day"
+  ],
+  "constraints": [
+    "does not drive",
+    "prefers public transport / taxis / ride apps",
+    "wants safety info for solo female travel",
+    "likes nightlife but wants backup plans",
+    "does not want overpacked itineraries",
+    "cares about realistic budget",
+    "prefers not to rely on early morning logistics after a big night out"
+  ],
+  "travel_style": "solo but social, nightlife-curious, cultural, practical, not luxury but not hostile-budget",
+  "key_questions": [
+    "Do Uber / Bolt / Yandex or local equivalents operate here?",
+    "Is solo female nightlife realistic or does it require local contacts?",
+    "What are the practical safety patterns for a solo woman, day and night?",
+    "Which nights are best for going out?",
+    "What is the late-night transport situation after clubs close?",
+    "What is a realistic daily budget including one night out?",
+    "Which areas are best to stay in for walkability and nightlife access?",
+    "What should be avoided — areas, scams, situations?",
+    "What are the airport transfer options and rough cost?",
+    "eSIM or local SIM — what works best here?"
+  ]
+}
