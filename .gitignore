@@ -1,5 +1,6 @@
 .env
 .claude/
+.vscode/
 CLAUDE.md
 .venv/
 *.pyc
