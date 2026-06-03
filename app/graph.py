@@ -7,24 +7,28 @@ from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
 from app.lib.utils import load_prompt, load_profile
+from app.lib.models import TravelResponse
 
 
-
-load_dotenv()  # Load environment variables from .env file
+load_dotenv()
 
 profile = load_profile()
+
 class State(TypedDict):
     messages: Annotated[list, add_messages]
+    responses: list[TravelResponse]
 
 
 llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0.2)
+structured_llm = llm.with_structured_output(TravelResponse)
 
 
 def chatbot(state: State):
-    system_prompt = load_prompt("app/lib/prompts/chat_prompt.txt", user_profile = profile)
-    ai_reply: AIMessage = llm.invoke([SystemMessage(content=system_prompt)] + state["messages"])
+    system_prompt = load_prompt("app/lib/prompts/chat_prompt.txt", user_profile=profile)
+    response: TravelResponse = structured_llm.invoke([SystemMessage(content=system_prompt)] + state["messages"])
     return {
-        "messages": [ai_reply]
+        "messages": [AIMessage(content=response.chat_response)],
+        "responses": state.get("responses", []) + [response],
     }
 
 
