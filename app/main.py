@@ -2,7 +2,7 @@ from langfuse.langchain import CallbackHandler
 from langchain_core.messages import HumanMessage
 from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
-from app.graph import build_workflow
+from app.agent.graph import build_workflow
 from app.lib.models import TravelResponse
 from uuid import uuid4
 
