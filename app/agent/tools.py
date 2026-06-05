@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
-from langchain_core.tools import tool
+from langchain_core.tools import tool, StructuredTool
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
+from app.lib.models import TravelResponse
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "search"
 
@@ -22,6 +23,15 @@ def search_nightlife(nightlife_query: str) -> list[dict]:
         {"title": r["title"], "content": r["content"], "url": r["url"]}
         for r in data["results"]
     ]
+
+
+def make_respond_tool():
+    return StructuredTool.from_function(
+        func=lambda **kwargs: TravelResponse(**kwargs),
+        name="respond",
+        description="Use this to give your final answer to the user.",
+        args_schema=TravelResponse,
+    )
 
 
 def make_nightlife_agent_tool(llm, prompt):
