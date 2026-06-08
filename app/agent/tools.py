@@ -4,6 +4,7 @@ from langchain_core.tools import tool, StructuredTool
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
 from app.lib.models import TravelResponse
+from app.lib.tavily_search import tavily_client
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data" / "search"
 
@@ -61,6 +62,34 @@ def make_budget_agent_tool(llm, prompt):
         return result["messages"][-1].content
 
     return call_budget_agent
+
+
+@tool
+def search_side_quests(query: str) -> list[dict]:
+    """
+    Search the web for local, off-beat activities and experiences at a destination.
+    The query should include the destination, time context, and any relevant constraints from the conversation.
+    Returns a list of activity results with titles, content, and URLs.
+    Args:
+        query (str): A search query including destination and context (e.g. 'unusual local activities Tbilisi afternoon solo').
+    """
+    results = tavily_client.search(query, max_results=6)
+    return [
+        {"title": r["title"], "content": r["content"], "url": r["url"]}
+        for r in results["results"]
+    ]
+
+
+def make_side_quest_agent_tool(llm, prompt):
+    agent = create_agent(llm, tools=[search_side_quests], system_prompt=prompt)
+
+    @tool
+    def call_side_quest_agent(query: str) -> str:
+        """Call the side quest agent to find unusual, local, off-beat activities at a destination. Include destination, time of day, energy level, and any activities already done in the query."""
+        result = agent.invoke({"messages": [HumanMessage(content=query)]})
+        return result["messages"][-1].content
+
+    return call_side_quest_agent
 
 
 def make_nightlife_agent_tool(llm, prompt):
