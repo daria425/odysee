@@ -1,4 +1,4 @@
-from app.agent.nodes import trimmer, make_call_model
+from app.agent.chat.nodes import trimmer, make_call_model
 from unittest.mock import MagicMock
 from langchain_core.messages import HumanMessage, AIMessage
 

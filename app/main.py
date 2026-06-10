@@ -2,8 +2,8 @@ from langfuse.langchain import CallbackHandler
 from langchain_core.messages import HumanMessage
 from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
-from app.agent.graph import build_workflow
-from app.agent.state import State
+from app.agent.chat.graph import build_workflow
+from app.agent.chat.state import State
 from uuid import uuid4
 
 if __name__ == "__main__":
