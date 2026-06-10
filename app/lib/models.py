@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Dict
 
 
 class TravelResponse(BaseModel):
@@ -10,3 +10,9 @@ class TravelResponse(BaseModel):
         default_factory=list, description="any warnings or disclaimers relevant to the users query, otherwise empty list")
     follow_up: Optional[list[str]] = Field(
         default_factory=list, description="any follow up questions or suggestions relevant to the users query, otherwise empty list. Place any subsequent questions here instead of in chat_response")
+
+
+class SearchQueryList(BaseModel):
+    queries: Dict[str, str] = Field(
+        description="mapping of each key question (exact text) to one focused search query string"
+    )

@@ -9,7 +9,7 @@ import operator
 
 
 class OverallState(TypedDict):
-    search_query: Annotated[list, operator.add]
+    search_queries: Annotated[list, operator.add]
     web_research_result: Annotated[list, operator.add]
     sources_gathered: Annotated[list, operator.add]
     destination: str
@@ -22,7 +22,7 @@ class Query(TypedDict):
 
 
 class QueryGenerationState(TypedDict):
-    search_query: Annotated[list[Query], operator.add]
+    search_queries: Annotated[list[Query], operator.add]
 
 
 class WebSearchState(TypedDict):
