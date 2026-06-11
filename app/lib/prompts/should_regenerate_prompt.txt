@@ -1,42 +1,35 @@
+You are evaluating the quality of web research answers for a pre-trip travel briefing.
+
+You will be given a numbered list of question-answer pairs. For each answer, assess whether it fully satisfies the question using the criteria below. Return the index of any answer that fails, along with specific feedback on what is missing.
+
+## Evaluation criteria — flag an answer if it:
+- Explicitly states gaps ("results don't provide...", "not specified in results")
+- Contains no concrete specifics: app names, prices, area names, timings, GEL/USD amounts
+- Relies on generic advice with nothing actionable underneath
+- Only partially answers the question (e.g. asked for best nights, only one night covered)
+
+## Example of an answer that should be flagged (index 4):
+Question: What is the late-night transport situation after clubs close?
+Answer: ...Bus #37 runs 24/7 and costs around 0.50 lari, though you may need to combine it with a taxi for your final destination. The search results don't provide specific details about public transport frequency after clubs close, typical wait times for ride-hailing apps, or pricing for late-night taxis...
+
+This should be flagged because it explicitly admits gaps on wait times, frequency, and pricing — the core of what the question is asking for.
+feedback: "Answer lacks specific late-night taxi pricing, Bolt/Yandex wait times after 3–4am, and whether Bus #37 actually runs at club-closing hours. Search for more targeted late-night transport data."
+
+## Example input format (this is what {{web_research_results}} will look like):
 [
     {
         "question": "Do Uber / Bolt / Yandex or local equivalents operate here?",
-        "answer": "**Ride-sharing apps operating in Tbilisi:**\n\n- **Bolt** – Most widely used taxi app in the city; recommended for everyday rides\n- **Yandex Go** – Popular alternative with thousands of daily trips across Tbilisi, Batumi, and other Georgian cities\n- **Uber** – Does **not** operate in Georgia\n\nBoth Bolt and Yandex Go require a data connection to book rides. Using these apps is preferable to hailing street taxis, where you must negotiate prices in advance."
-    },
-    {
-        "question": "Is solo female nightlife realistic or does it require local contacts?",
-        "answer": "Based on the search results, solo female nightlife in Tbilisi is realistic **without requiring local contacts**:\n\n- **Tbilisi has an active nightlife scene**: One source explicitly states \"Tbilisi has a buzzing nightlife scene, and many solo female travellers enjoy bars, restaurants, and clubs with no trouble.\"\n\n- **Tourist-friendly infrastructure**: English works in newer restaurants and bars, and the city is described as \"the most cosmopolitan and easiest city to navigate solo.\"\n\n- **Safety caveat**: The main recommendation is to avoid walking around alone very late at night, though one traveler reported feeling safe exploring \"at various times of the day.\"\n\n- **Where nightlife happens**: The search results note that the main tourist area (Old Town with sulfur baths) is \"quiet at night with not much nightlife — you'll go to other areas for that,\" implying nightlife venues are accessible and known.\n\nThe sources suggest solo female nightlife is straightforward in Tbilisi's established bar and club scene without needing local connections, though standard late-night safety precautions apply."
-    },
-    {
-        "question": "What are the practical safety patterns for a solo woman, day and night?",
-        "answer": "# Safety Patterns for Solo Women in Tbilisi\n\n**General Safety Level:**\nTbilisi is considered safe for solo female travelers with low crime rates and friendly locals. Women commonly report feeling safe walking alone at night in major areas.\n\n**Day & Night Patterns:**\n- **Daytime:** Tourist areas (Old Town with sulfur baths and fortress) are active and safe; English is widely spoken in tourist zones, newer restaurants, and among younger people\n- **Nightlife:** The Old Town is quiet at night with minimal nightlife—women typically travel to other neighborhoods for evening activities\n\n**Practical Recommendations:**\n- Use local guides and curated experiences for exploring\n- Stay in carefully vetted, female-friendly accommodations\n- Exercise \"normal city-level precautions\" as you would in any major city\n- Rely on English in tourist areas; language may be more limited elsewhere\n\n**Note:** The search results emphasize Tbilisi's overall safety but don't specify particular neighborhoods to avoid at night or detailed safety protocols beyond general precautions."
-    },
-    {
-        "question": "Which nights are best for going out?",
-        "answer": "Based on the search results, **Friday nights** are specifically recommended as the best time to go out, with Bassiani highlighted as the top club for Friday nights.\n\nHowever, the results don't provide a comprehensive guide to other optimal nights. One source mentions that **Sunday nights** have activity (referencing Akhvlediani street and clubs like Limitless), and weekdays are noted as having \"options for various types of music,\" but specific recommendations for other nights aren't detailed.\n\n**Practical tip:** Use **Resident Advisor (ra.co/events/ge/tbilisi)** to check what's actually happening during your stay, as the club scene is described as \"ever-evolving\" with constantly updated event listings."
+        "answer": "**Ride-sharing apps operating in Tbilisi:**\n\n- **Bolt** – Most widely used taxi app in the city; recommended for everyday rides\n- **Yandex Go** – Popular alternative with thousands of daily trips across Tbilisi, Batumi, and other Georgian cities\n- **Uber** – Does **not** operate in Georgia\n\nBoth Bolt and Yandex Go require a data connection to book rides. Using these apps is preferable to hailing street taxis, where you must negotiate prices in advance.",
+        "search_query": "Uber Bolt Yandex taxi apps Tbilisi 2026"
     },
     {
         "question": "What is the late-night transport situation after clubs close?",
-        "answer": "# Late-Night Transport After Clubs Close in Tbilisi\n\nBased on the search results provided, here are your options:\n\n**Available Transport:**\n- **Ride-hailing apps** (Bolt, Yandex Go) operate at night but with longer wait times\n- **Taxis** are available at ranks but in reduced numbers late at night\n- **Bus #37** runs 24/7 and costs around 0.50 lari, though you may need to combine it with a taxi for your final destination\n\n**Key Limitation:**\nThe search results don't provide specific details about public transport frequency after clubs close, typical wait times for ride-hailing apps, or pricing for late-night taxis. One source mentions that combining bus #37 with a taxi \"will be much cheaper\" than alternatives, but doesn't specify exact costs or timings for club closing hours."
-    },
-    {
-        "question": "What is a realistic daily budget including one night out?",
-        "answer": "# Realistic Daily Budget for Georgia (Including One Night Out)\n\n**Budget traveler: $30–50/day** ($38/103 GEL average)\n- Hostel dorm: $8–14/night\n- Local meals (khinkali, salad, wine): $6–10/person\n- One night out at mid-range restaurant with wine: $15–25\n- Transport and activities: remaining budget\n\n**Mid-range traveler: $50–100/day** (150–300 GEL)\n- 3-star hotel: 80–180 GEL/night\n- Mix of budget and mid-range dining\n- One night out comfortably covered within daily budget\n- Activities and transport included\n\n**For a specific night out:** A sit-down meal with wine in Tbilisi's old town runs **$15–25 per person** at mid-range establishments, or a domestic beer costs **₾8 ($3)** at local bars.\n\nThe search results don't provide a single \"daily budget including one night out\" figure, but combining accommodation ($8–14), meals ($6–10 daily), and one restaurant evening ($15–25) suggests **$40–60/day minimum** for budget travelers wanting a proper night out."
-    },
-    {
-        "question": "Which areas are best to stay in for walkability and nightlife access?",
-        "answer": "Based on the search results, the best areas for walkability and nightlife access in Tbilisi are:\n\n**Old Town (Kala/Dzveli Tbilisi)** – Walking distance to iconic sites like the Sulphur Baths, Narikala Fortress, and Peace Bridge, with a lively nightlife scene featuring wine bars and cafes.\n\n**Vera** – Recommended as one of the nicest neighborhoods with good walkability and nightlife options.\n\n**Rustaveli Avenue area** – Features many pubs, wine bars, and dining areas, though one source suggests avoiding accommodation directly near Parliament if you prefer quieter surroundings.\n\n**Sololaki** – Listed among the nicest neighborhoods with walkability appeal.\n\n**Mtatsminda** – Mentioned as one of the most walkable areas with good amenities.\n\nThe search results emphasize Old Town as particularly strong for both criteria, offering immediate access to major attractions and an active evening scene. However, the results don't provide detailed comparisons of nightlife intensity between neighborhoods or specific venue counts."
-    },
-    {
-        "question": "What should be avoided — areas, scams, situations?",
-        "answer": "## Areas & Situations to Avoid:\n\n**Geographic areas:**\n- Occupied regions of Abkhazia and South Ossetia — avoid all travel due to crime, military activity, detention risk, and landmines\n- Areas along administrative boundary lines between regions and near the Azerbaijan border (Red Bridge area) — risk of unexploded ordnance and landmines\n- Around Shardeni and its pedestrian section (mentioned as areas to avoid locally)\n- Unfamiliar places recommended only by people you don't know\n\n**Current situation:**\n- Tbilisi — exercise high degree of caution due to risk of demonstrations and clashes between security forces and protestors\n\n**Common scams:**\n- Open tabs at bars/clubs without asking prices first — agree on prices before ordering\n- Letting strangers order for you\n- Paying after drinking rather than immediately after ordering"
-    },
-    {
-        "question": "What are the airport transfer options and rough cost?",
-        "answer": "# Tbilisi Airport Transfer Options & Costs\n\n**Private Transfers:**\n- GoTrip: from $20 USD (54 GEL) per car\n- FlyTaxi: 80 GEL\n- Private arrival transfer with meet & greet: $24\n\n**Ride-Sharing/Budget Options:**\n- Bolt: approximately $14\n- Airport shuttle service: $14\n\n**Shared Transfers:**\n- Available at affordable prices (exact cost not specified in results)\n\n**Booking Tips:**\nBook in advance for winter and high season. Private transfers offer door-to-door service with fixed pricing and professional drivers, avoiding negotiation stress. SUV/4×4 vehicles are recommended for mountain destinations."
-    },
-    {
-        "question": "eSIM or local SIM — what works best here?",
-        "answer": "# eSIM vs Local SIM in Tbilisi\n\n**Local SIM wins on cost** — you'll pay a fraction of eSIM rates for the same data. A physical SIM at Tbilisi airport costs around 32 GEL ($12) with affordable short-term tourist plans available.\n\n**eSIM wins on convenience** — no need to queue at the airport or swap cards; activate before arrival.\n\n**Best overall provider:** Magti offers the widest range of tourist-friendly SIM and eSIM options, while Beeline is also mentioned as a strong choice.\n\n**Recommendation:** For most visitors, a local SIM card is the practical choice due to significantly lower costs and reliable coverage across Georgia, even in remote areas. eSIM suits those prioritizing immediate activation without airport stops."
+        "answer": "# Late-Night Transport After Clubs Close in Tbilisi\n\nBased on the search results provided, here are your options:\n\n**Available Transport:**\n- **Ride-hailing apps** (Bolt, Yandex Go) operate at night but with longer wait times\n- **Taxis** are available at ranks but in reduced numbers late at night\n- **Bus #37** runs 24/7 and costs around 0.50 lari, though you may need to combine it with a taxi for your final destination\n\n**Key Limitation:**\nThe search results don't provide specific details about public transport frequency after clubs close, typical wait times for ride-hailing apps, or pricing for late-night taxis.",
+        "search_query": "late night transport Tbilisi after clubs close 2026"
     }
 ]
+
+## Instructions
+- Use 0-based indexing matching the list above
+- feedback should state specifically what detail is missing and suggest what a better search query should target — this will be used to write a more effective query
+- If all answers are sufficient, return an empty list

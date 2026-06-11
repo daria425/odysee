@@ -16,3 +16,15 @@ class SearchQueryList(BaseModel):
     queries: Dict[str, str] = Field(
         description="mapping of each key question (exact text) to one focused search query string"
     )
+
+
+class QueryToRegenerate(BaseModel):
+    item_index: int = Field(
+        description="index of the item in the web search results that needs to be regenerated")
+    feedback: str = Field(
+        description="feedback on why the current search query result is insufficient, to guide regeneration")
+
+
+class RegenerateResponse(BaseModel):
+    queries_to_regenerate: Optional[list[QueryToRegenerate]] = Field(
+        default_factory=list, description="list of search queries that need to be regenerated based on feedback, if any")

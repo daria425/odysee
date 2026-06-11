@@ -2,7 +2,7 @@ from app.agent.research.state import OverallState, WebSearchState
 from app.agent.research.configuration import Configuration
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_anthropic import ChatAnthropic
-from app.lib.models import SearchQueryList
+from app.lib.models import SearchQueryList, RegenerateResponse
 from langgraph.types import Send
 from app.lib.utils import load_prompt, load_questions
 from app.lib.tavily_search import tavily_client
@@ -68,6 +68,32 @@ def web_research(state: WebSearchState, config: RunnableConfig):
     return {
         "sources_gathered": sources,
         "web_research_result": [{"question": state["question"], "answer": response.content, "search_query": state["search_query"]}],
+    }
+
+
+def should_regenerate(state: OverallState, config: RunnableConfig):
+    configuration = Configuration.from_runnable_config(config)
+    llm = ChatAnthropic(model_name=configuration.judge_model,
+                        temperature=0, api_key=os.getenv("ANTHROPIC_API_KEY")).with_structured_output(RegenerateResponse)
+    system_prompt = load_prompt("app/lib/prompts/should_regenerate_prompt.txt")
+    user_msg = f"""
+    Here is the list of web search queries and their results:
+    {state['web_research_result']}
+    """
+    response: RegenerateResponse = llm.invoke(
+        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
+    results = state["web_research_result"]
+    queries_to_regenerate = [
+        {
+            "initial_user_question": results[item.item_index]["question"],
+            "prev_generated_query": results[item.item_index]["search_query"],
+            "output_feedback": item.feedback,
+        }
+        for item in (response.queries_to_regenerate or [])
+    ]
+    return {
+        "queries_to_regenerate": queries_to_regenerate,
+        "reflection_count": state.get("reflection_count", 0) + 1,
     }
 
 
