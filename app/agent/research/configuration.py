@@ -4,7 +4,7 @@ from langchain_core.runnables import RunnableConfig
 
 @dataclass(kw_only=True)
 class Configuration:
-    model: str = "claude-sonnet-4-6"
+    question_generator_model: str = "claude-haiku-4-5-20251001"
     max_search_results: int = 5
 
     @classmethod

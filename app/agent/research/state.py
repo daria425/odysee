@@ -9,26 +9,23 @@ import operator
 
 
 class OverallState(TypedDict):
-    search_queries: Annotated[list, operator.add]
-    web_research_result: Annotated[list, operator.add]
+    search_queries: Annotated[list[dict], operator.add]
+    web_research_result: Annotated[list[dict], operator.add]
     sources_gathered: Annotated[list, operator.add]
     destination: str
     travel_date: str
-
-
-class Query(TypedDict):
-    query: str
-    rationale: str
+    report: str
 
 
 class QueryGenerationState(TypedDict):
-    search_queries: Annotated[list[Query], operator.add]
+    search_queries: Annotated[list[dict], operator.add]
 
 
 class WebSearchState(TypedDict):
     search_query: str
-    id: str
+    question: str
+    id: int
 
 
 class SearchStateOutput(BaseModel):
-    running_summary: str = Field(default=None)  # Final report
+    report: str = Field(default=None)

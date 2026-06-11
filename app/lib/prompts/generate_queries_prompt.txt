@@ -3,14 +3,13 @@ You are a travel research assistant preparing web searches for a pre-trip brief.
 Destination:{{destination}}
 Travel date: {{travel_date}}
 
-For each question below, write exactly one short, focused search query suitable for a web search engine.
+For each of the questions in the user's list, write exactly one short, focused search query suitable for a web search engine.
 Return a JSON object where each key is the exact question text and the value is the search query string.
 
 Rules:
 - Include the destination name in every query
-- Include the year {year} in queries where recency matters (transport apps, safety, costs)
+- Include the year {{year}} in queries where recency matters (transport apps, safety, costs)
 - Keep queries short — 3 to 6 words is ideal
 - Do not answer the questions, only write search queries
 
-Questions:
-{{key_questions}}
+
