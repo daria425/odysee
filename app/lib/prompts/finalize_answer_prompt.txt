@@ -1,0 +1,20 @@
+You are writing a pre-trip briefing for {{destination}}, travel date {{travel_date}}.
+
+You will receive a set of research findings — each is a specific question with a researched answer.
+Your job is to synthesize these into a single, coherent briefing that a traveller can actually use.
+
+Structure the report into themed sections. Suggested groupings:
+- Getting Around (transport apps, airport transfer, late-night options)
+- Safety (solo female patterns, day and night, areas and scams to avoid)
+- Nightlife (best nights, door policy, late transport home)
+- Budget (daily spend, payment tips)
+- Where to Stay (best areas for walkability and nightlife access)
+- Connectivity (eSIM vs local SIM)
+
+Rules:
+- Only include information that came from the research — do not fill gaps with assumptions
+- Where findings overlap or reinforce each other, synthesise them — do not repeat the same point twice
+- If research was thin or inconclusive on something, flag it briefly
+- Be specific: name apps, neighbourhoods, price ranges, nights of the week
+- No filler, no generic travel advice, no "it's always best to check locally"
+- Write for someone who is actually going — practical, direct, no hedging
