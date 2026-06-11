@@ -1,4 +1,4 @@
-from app.agent.research.state import OverallState, QueryGenerationState, WebSearchState
+from app.agent.research.state import OverallState, WebSearchState
 from app.agent.research.configuration import Configuration
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_anthropic import ChatAnthropic
@@ -72,14 +72,16 @@ def web_research(state: WebSearchState, config: RunnableConfig):
 
 def finalize_answer(state: OverallState, config: RunnableConfig):
     configuration = Configuration.from_runnable_config(config)
-    llm = ChatAnthropic(model_name=configuration.synthesis_model, temperature=0.3, api_key=os.getenv("ANTHROPIC_API_KEY"))
+    llm = ChatAnthropic(model_name=configuration.synthesis_model,
+                        temperature=0.3, api_key=os.getenv("ANTHROPIC_API_KEY"))
     system_prompt = load_prompt("app/lib/prompts/finalize_answer.txt",
                                 destination=state["destination"], travel_date=state["travel_date"])
     research = "\n\n".join(
         f"Q: {item['question']}\nA: {item['answer']}" for item in state["web_research_result"]
     )
     user_msg = f"Here are the research findings:\n\n{research}"
-    response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
+    response = llm.invoke(
+        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
     return {"report": response.content}
 
 
