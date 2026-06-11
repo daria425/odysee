@@ -74,7 +74,7 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
     configuration = Configuration.from_runnable_config(config)
     llm = ChatAnthropic(model_name=configuration.synthesis_model,
                         temperature=0.3, api_key=os.getenv("ANTHROPIC_API_KEY"))
-    system_prompt = load_prompt("app/lib/prompts/finalize_answer.txt",
+    system_prompt = load_prompt("app/lib/prompts/finalize_answer_prompt.txt",
                                 destination=state["destination"], travel_date=state["travel_date"])
     research = "\n\n".join(
         f"Q: {item['question']}\nA: {item['answer']}" for item in state["web_research_result"]

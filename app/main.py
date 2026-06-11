@@ -11,8 +11,8 @@ if __name__ == "__main__":
     llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0.2)
     langfuse_handler = CallbackHandler()
 
-    session_id = f"test-session-{str(uuid4())}"
-    thread_id = f"test-thread-{str(uuid4())}"
+    session_id = f"test-chat-session-{str(uuid4())}"
+    thread_id = f"test-chat-thread-{str(uuid4())}"
     config = {
         "configurable": {"thread_id": thread_id},
         "callbacks": [langfuse_handler],
@@ -23,5 +23,6 @@ if __name__ == "__main__":
         user_input = input("User: ")
         if user_input in ("exit", "quit"):
             break
-        state = workflow.invoke(State(messages=[HumanMessage(content=user_input)], responses=[]), config=config)
+        state = workflow.invoke(State(messages=[HumanMessage(
+            content=user_input)], responses=[]), config=config)
         print("AI:", state["messages"][-1].content)
