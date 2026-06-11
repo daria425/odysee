@@ -34,6 +34,7 @@ def generate_queries(state: OverallState, config: RunnableConfig):
         {"question": q, "search_query": s, "id": i} for i, (q, s) in enumerate(response.queries.items())
     ]
     return {
+        "pending_queries": formatted_queries,
         "search_queries": formatted_queries
     }
 
@@ -45,7 +46,7 @@ def create_web_research_nodes(state: OverallState):
             "question": item["question"],
             "id": item["id"],
         })
-        for item in state["search_queries"]
+        for item in state["pending_queries"]
     ]
 
 
@@ -66,7 +67,7 @@ def web_research(state: WebSearchState, config: RunnableConfig):
 
     return {
         "sources_gathered": sources,
-        "web_research_result": [{"question": state["question"], "answer": response.content}],
+        "web_research_result": [{"question": state["question"], "answer": response.content, "search_query": state["search_query"]}],
     }
 
 
