@@ -18,6 +18,12 @@ class SearchQueryList(BaseModel):
     )
 
 
+class RegeneratedQueryList(BaseModel):
+    queries: list[str] = Field(
+        description="list of search queries that need to be regenerated based on feedback"
+    )
+
+
 class QueryToRegenerate(BaseModel):
     item_index: int = Field(
         description="index of the item in the web search results that needs to be regenerated")

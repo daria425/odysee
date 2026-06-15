@@ -2,7 +2,7 @@ from app.agent.research.state import OverallState, WebSearchState
 from app.agent.research.configuration import Configuration
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_anthropic import ChatAnthropic
-from app.lib.models import SearchQueryList, RegenerateResponse
+from app.lib.models import SearchQueryList, RegenerateResponse, RegeneratedQueryList, RegeneratedQueryList
 from langgraph.types import Send
 from app.lib.utils import load_prompt, load_questions
 from app.lib.tavily_search import tavily_client
@@ -118,6 +118,28 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
     response = llm.invoke(
         [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
     return {"report": response.content}
+
+
+def regenerate_queries(state: OverallState, config: RunnableConfig):
+    configuration = Configuration.from_runnable_config(config)
+    llm = ChatAnthropic(model_name=configuration.question_generator_model,
+                        temperature=0.2, api_key=os.getenv("ANTHROPIC_API_KEY")).with_structured_output(RegeneratedQueryList)
+    system_prompt = load_prompt(
+        "app/lib/prompts/regenerate_queries_prompt.txt")
+    user_msg = f"""
+    Here are the queries that need to be regenerated (prev_generated_query), feedback (output_feedback), and the initial user question (initial_user_question):
+    {state['queries_to_regenerate']}
+    """
+    response: RegeneratedQueryList = llm.invoke(
+        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
+    pending_queries = [
+        {"question": item["initial_user_question"], "search_query": new_query, "id": i}
+        for i, (item, new_query) in enumerate(zip(state["queries_to_regenerate"], response.queries))
+    ]
+    return {
+        "pending_queries": pending_queries,
+        "search_queries": pending_queries,
+    }
 
 
 if __name__ == "__main__":
