@@ -9,6 +9,7 @@ class Configuration:
     synthesis_model: str = "claude-sonnet-4-6"
     judge_model: str = "claude-sonnet-4-6"
     max_search_results: int = 5
+    max_reflections: int = 2
 
     @classmethod
     def from_runnable_config(cls, config: RunnableConfig | None = None) -> "Configuration":

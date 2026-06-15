@@ -1,4 +1,4 @@
-from app.agent.research.nodes import generate_queries, create_web_research_nodes, web_research, finalize_answer
+from app.agent.research.nodes import generate_queries, create_web_research_nodes, web_research, finalize_answer, should_regenerate, route_after_reflection
 from app.agent.research.state import OverallState as State
 from app.agent.research.configuration import Configuration
 from langgraph.graph import StateGraph, START, END
@@ -15,7 +15,12 @@ builder.add_edge(START, "generate_queries")
 builder.add_conditional_edges(
     "generate_queries", create_web_research_nodes, ["web_research"]
 )
-builder.add_edge("web_research", "finalize_answer")
+builder.add_edge("web_research", "should_regenerate")
+# builder.add_edge("web_research", "finalize_answer")
+builder.add_conditional_edges("should_regenerate", route_after_reflection, [
+                              "regenerate_queries", "finalize_answer"])
+builder.add_conditional_edges(
+    "regenerate_queries", create_web_research_nodes, ["web_research"])
 builder.add_edge("finalize_answer", END)
 workflow = builder.compile(checkpointer=InMemorySaver())
 

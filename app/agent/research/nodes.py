@@ -73,6 +73,8 @@ def web_research(state: WebSearchState, config: RunnableConfig):
 
 def should_regenerate(state: OverallState, config: RunnableConfig):
     configuration = Configuration.from_runnable_config(config)
+    if state.get("reflection_count", 0) >= configuration.max_reflections:
+        return {"queries_to_regenerate": [], "reflection_count": state.get("reflection_count", 0) + 1}
     llm = ChatAnthropic(model_name=configuration.judge_model,
                         temperature=0, api_key=os.getenv("ANTHROPIC_API_KEY")).with_structured_output(RegenerateResponse)
     system_prompt = load_prompt("app/lib/prompts/should_regenerate_prompt.txt")
@@ -95,6 +97,12 @@ def should_regenerate(state: OverallState, config: RunnableConfig):
         "queries_to_regenerate": queries_to_regenerate,
         "reflection_count": state.get("reflection_count", 0) + 1,
     }
+
+
+def route_after_reflection(state: OverallState):
+    if state.get("queries_to_regenerate"):
+        return "regenerate_queries"
+    return "finalize_answer"
 
 
 def finalize_answer(state: OverallState, config: RunnableConfig):
