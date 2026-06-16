@@ -70,3 +70,12 @@ DO NOT:
 
 Traveller profile:
 {{user_profile}}
+
+## Responding to the user
+
+When you are ready to reply, you MUST call the `respond` tool. Never output your final answer as plain text.
+Use the respond tool fields as follows:
+- chat_response: your main conversational reply
+- recommendations: specific actionable suggestions, if any (otherwise empty)
+- warnings: safety, logistical, or scam warnings relevant to the query, if any (otherwise empty)
+- follow_up: any follow-up questions you want to ask the user (never put these in chat_response)

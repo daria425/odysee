@@ -1,28 +1,41 @@
-from langfuse.langchain import CallbackHandler
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, Request
 from langchain_core.messages import HumanMessage
+from langfuse.langchain import CallbackHandler
 from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
 from app.agent.chat.graph import build_workflow
-from app.agent.chat.state import State
-from uuid import uuid4
+from app.lib.models import TravelResponse, APIChatResponse, APIChatRequest
 
-if __name__ == "__main__":
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     load_dotenv()
     llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0.2)
-    langfuse_handler = CallbackHandler()
+    app.state.workflow = build_workflow(llm=llm)
+    app.state.langfuse_handler = CallbackHandler()
+    yield
 
-    session_id = f"test-chat-session-{str(uuid4())}"
-    thread_id = f"test-chat-thread-{str(uuid4())}"
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.post("/chat", response_model=APIChatResponse)
+def chat(request: APIChatRequest, fastapi_request: Request):
+    workflow = fastapi_request.app.state.workflow
     config = {
-        "configurable": {"thread_id": thread_id},
-        "callbacks": [langfuse_handler],
-        "metadata": {"langfuse_session_id": session_id}
+        "configurable": {"thread_id": request.thread_id},
+        "callbacks": [app.state.langfuse_handler],
+        "metadata": {"langfuse_session_id": request.langfuse_session_id}
     }
-    workflow = build_workflow(llm=llm)
-    while True:
-        user_input = input("User: ")
-        if user_input in ("exit", "quit"):
-            break
-        state = workflow.invoke(State(messages=[HumanMessage(
-            content=user_input)], responses=[]), config=config)
-        print("AI:", state["messages"][-1].content)
+    state = workflow.invoke(
+        {"messages": [HumanMessage(content=request.user_message)]},
+        config=config,
+    )
+
+    if state.get("responses"):
+        travel: TravelResponse = state["responses"][-1]
+    else:
+        travel = TravelResponse(chat_response=state["messages"][-1].content)
+
+    return APIChatResponse(thread_id=request.thread_id, langfuse_session_id=request.langfuse_session_id, **travel.model_dump())

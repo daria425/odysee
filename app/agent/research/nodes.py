@@ -2,7 +2,7 @@ from app.agent.research.state import OverallState, WebSearchState
 from app.agent.research.configuration import Configuration
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_anthropic import ChatAnthropic
-from app.lib.models import SearchQueryList, RegenerateResponse, RegeneratedQueryList, RegeneratedQueryList
+from app.lib.models import SearchQueryList, RegenerateResponse, RegeneratedQueryList
 from langgraph.types import Send
 from app.lib.utils import load_prompt, load_questions
 from app.lib.tavily_search import tavily_client
@@ -133,7 +133,8 @@ def regenerate_queries(state: OverallState, config: RunnableConfig):
     response: RegeneratedQueryList = llm.invoke(
         [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
     pending_queries = [
-        {"question": item["initial_user_question"], "search_query": new_query, "id": i}
+        {"question": item["initial_user_question"],
+            "search_query": new_query, "id": i}
         for i, (item, new_query) in enumerate(zip(state["queries_to_regenerate"], response.queries))
     ]
     return {

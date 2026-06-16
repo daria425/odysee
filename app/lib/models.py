@@ -12,6 +12,17 @@ class TravelResponse(BaseModel):
         default_factory=list, description="any follow up questions or suggestions relevant to the users query, otherwise empty list. Place any subsequent questions here instead of in chat_response")
 
 
+class APIChatResponse(TravelResponse):
+    thread_id: str
+    langfuse_session_id: str
+
+
+class APIChatRequest(BaseModel):
+    user_message: str
+    thread_id: str
+    langfuse_session_id: str
+
+
 class SearchQueryList(BaseModel):
     queries: Dict[str, str] = Field(
         description="mapping of each key question (exact text) to one focused search query string"
