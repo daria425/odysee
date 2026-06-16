@@ -11,7 +11,7 @@ from app.lib.utils import load_profile, load_prompt
 def should_continue(state):
     last = state["messages"][-1]
     if not last.tool_calls:
-        return END
+        return "format_response"
     if last.tool_calls[0]["name"] == "respond":
         return "format_response"
     return "tool_node"

@@ -14,13 +14,19 @@ def trim_messages(state):
 
 
 def format_response(state):
-    tool_call = state["messages"][-1].tool_calls[0]
-    final = TravelResponse(**tool_call["args"])
-    return {
-        "messages": [
+    last = state["messages"][-1]
+    if last.tool_calls and last.tool_calls[0]["name"] == "respond":
+        tool_call = last.tool_calls[0]
+        final = TravelResponse(**tool_call["args"])
+        extra_messages = [
             ToolMessage(content="ok", tool_call_id=tool_call["id"]),
             AIMessage(content=final.chat_response),
-        ],
+        ]
+    else:
+        final = TravelResponse(chat_response=last.content)
+        extra_messages = []
+    return {
+        "messages": extra_messages,
         "responses": state.get("responses", []) + [final],
     }
 
