@@ -1,6 +1,9 @@
+import logging
 from langchain_core.messages import SystemMessage, AIMessage, ToolMessage
 from app.lib.models import TravelResponse
 from app.lib.utils import load_prompt
+
+logger = logging.getLogger(__name__)
 
 MESSAGE_WINDOW = 10
 
@@ -22,9 +25,11 @@ def format_response(state):
             ToolMessage(content="ok", tool_call_id=tool_call["id"]),
             AIMessage(content=final.chat_response),
         ]
+        logger.info("format_response: structured respond tool")
     else:
         final = TravelResponse(chat_response=last.content)
         extra_messages = []
+        logger.info("format_response: plain text fallback")
     return {
         "messages": extra_messages,
         "responses": state.get("responses", []) + [final],

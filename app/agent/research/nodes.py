@@ -1,3 +1,4 @@
+import logging
 from app.agent.research.state import OverallState, WebSearchState
 from app.agent.research.configuration import Configuration
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -10,6 +11,8 @@ from dotenv import load_dotenv
 from datetime import date
 import os
 from langchain_core.runnables import RunnableConfig
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 

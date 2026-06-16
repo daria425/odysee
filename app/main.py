@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from langchain_core.messages import HumanMessage
@@ -6,6 +7,9 @@ from langchain_anthropic import ChatAnthropic
 from dotenv import load_dotenv
 from app.agent.chat.graph import build_workflow
 from app.lib.models import TravelResponse, APIChatResponse, APIChatRequest
+
+logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -28,6 +32,7 @@ def chat(request: APIChatRequest, fastapi_request: Request):
         "callbacks": [app.state.langfuse_handler],
         "metadata": {"langfuse_session_id": request.langfuse_session_id}
     }
+    logger.info("chat request thread=%s", request.thread_id)
     state = workflow.invoke(
         {"messages": [HumanMessage(content=request.user_message)]},
         config=config,
