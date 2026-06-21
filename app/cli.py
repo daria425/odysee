@@ -1,6 +1,7 @@
 from langfuse.langchain import CallbackHandler
 from langchain_core.messages import HumanMessage
 from langchain_anthropic import ChatAnthropic
+from langgraph.checkpoint.memory import InMemorySaver
 from dotenv import load_dotenv
 from app.agent.chat.graph import build_workflow
 from app.agent.chat.state import State
@@ -18,7 +19,7 @@ if __name__ == "__main__":
         "callbacks": [langfuse_handler],
         "metadata": {"langfuse_session_id": session_id}
     }
-    workflow = build_workflow(llm=llm)
+    workflow = build_workflow(llm=llm, checkpointer=InMemorySaver())
     while True:
         user_input = input("User: ")
         if user_input in ("exit", "quit"):

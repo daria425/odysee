@@ -4,9 +4,11 @@ from fastapi import FastAPI, Request
 from langchain_core.messages import HumanMessage
 from langfuse.langchain import CallbackHandler
 from langchain_anthropic import ChatAnthropic
+from langgraph.checkpoint.sqlite import SqliteSaver
 from dotenv import load_dotenv
 from app.agent.chat.graph import build_workflow
 from app.lib.models import TravelResponse, APIChatResponse, APIChatRequest
+from app.lib.db.store import DB_PATH
 
 logging.basicConfig(level=logging.INFO, format="%(name)s | %(levelname)s | %(message)s")
 logger = logging.getLogger(__name__)
@@ -16,9 +18,10 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     load_dotenv()
     llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0.2)
-    app.state.workflow = build_workflow(llm=llm)
-    app.state.langfuse_handler = CallbackHandler()
-    yield
+    with SqliteSaver.from_conn_string(str(DB_PATH)) as checkpointer:
+        app.state.workflow = build_workflow(llm=llm, checkpointer=checkpointer)
+        app.state.langfuse_handler = CallbackHandler()
+        yield
 
 
 app = FastAPI(lifespan=lifespan)

@@ -1,6 +1,6 @@
 from langchain_core.language_models.chat_models import BaseChatModel
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import ToolNode
 from app.agent.chat.state import State
 from app.agent.chat.nodes import trim_messages, make_call_model, format_response
@@ -17,7 +17,7 @@ def should_continue(state):
     return "tool_node"
 
 
-def build_workflow(llm: BaseChatModel):
+def build_workflow(llm: BaseChatModel, checkpointer: BaseCheckpointSaver):
     profile = load_profile()
 
     nightlife_prompt = load_prompt("app/lib/prompts/nightlife_research_prompt.txt", user_profile=profile)
@@ -40,4 +40,4 @@ def build_workflow(llm: BaseChatModel):
     builder.add_edge("tool_node", "call_model")
     builder.add_edge("format_response", END)
 
-    return builder.compile(checkpointer=InMemorySaver())
+    return builder.compile(checkpointer=checkpointer)
