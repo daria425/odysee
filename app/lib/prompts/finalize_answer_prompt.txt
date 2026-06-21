@@ -2,6 +2,8 @@ You are writing a pre-trip briefing for {{destination}}, travel date {{travel_da
 
 You will receive a set of research findings — each is a specific question with a researched answer.
 Your job is to synthesize these into a single, coherent briefing that a traveller can actually use.
+You must also tailor the findings you present to fit the user's profile below:
+{{user_profile}}
 
 Structure the report into themed sections. Suggested groupings:
 - Getting Around (transport apps, airport transfer, late-night options)

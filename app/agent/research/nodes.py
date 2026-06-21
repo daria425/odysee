@@ -5,7 +5,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_anthropic import ChatAnthropic
 from app.lib.models import SearchQueryList, RegenerateResponse, RegeneratedQueryList
 from langgraph.types import Send
-from app.lib.utils import load_prompt, load_questions
+from app.lib.utils import load_prompt, load_questions, load_profile
 from app.lib.tavily_search import tavily_client
 from dotenv import load_dotenv
 from datetime import date
@@ -32,6 +32,7 @@ def generate_queries(state: OverallState, config: RunnableConfig):
     """
     messages = [SystemMessage(content=system_prompt),
                 HumanMessage(content=user_msg)]
+    logger.info("generate_queries: %s / %s", state["destination"], state["travel_date"])
     response: SearchQueryList = llm.invoke(messages)
     formatted_queries = [
         {"question": q, "search_query": s, "id": i} for i, (q, s) in enumerate(response.queries.items())
@@ -54,6 +55,7 @@ def create_web_research_nodes(state: OverallState):
 
 
 def web_research(state: WebSearchState, config: RunnableConfig):
+    logger.info("web_research: %s", state["question"])
     configuration = Configuration.from_runnable_config(config)
     results = tavily_client.search(
         state["search_query"], max_results=configuration.max_search_results)["results"]
@@ -88,6 +90,7 @@ def should_regenerate(state: OverallState, config: RunnableConfig):
     response: RegenerateResponse = llm.invoke(
         [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
     results = state["web_research_result"]
+    logger.info("should_regenerate: round %d, flagging %d/%d answers", state.get("reflection_count", 0), len(response.queries_to_regenerate or []), len(results))
     queries_to_regenerate = [
         {
             "initial_user_question": results[item.item_index]["question"],
@@ -109,11 +112,14 @@ def route_after_reflection(state: OverallState):
 
 
 def finalize_answer(state: OverallState, config: RunnableConfig):
+    logger.info("finalize_answer: %s", state["destination"])
     configuration = Configuration.from_runnable_config(config)
     llm = ChatAnthropic(model_name=configuration.synthesis_model,
                         temperature=0.3, api_key=os.getenv("ANTHROPIC_API_KEY"))
+    profile = load_profile()
     system_prompt = load_prompt("app/lib/prompts/finalize_answer_prompt.txt",
-                                destination=state["destination"], travel_date=state["travel_date"])
+                                destination=state["destination"], travel_date=state["travel_date"],
+                                user_profile=profile)
     research = "\n\n".join(
         f"Q: {item['question']}\nA: {item['answer']}" for item in state["web_research_result"]
     )
