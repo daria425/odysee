@@ -45,3 +45,10 @@ class QueryToRegenerate(BaseModel):
 class RegenerateResponse(BaseModel):
     queries_to_regenerate: Optional[list[QueryToRegenerate]] = Field(
         default_factory=list, description="list of search queries that need to be regenerated based on feedback, if any")
+
+
+class MemoryExtractionResult(BaseModel):
+    memory_entry: Optional[str] = Field(
+        default=None,
+        description="A single concise sentence capturing a trip fact worth remembering, or null if nothing to log"
+    )

@@ -1,7 +1,12 @@
 import logging
-from langchain_core.messages import SystemMessage, AIMessage, ToolMessage
-from app.lib.models import TravelResponse
+import os
+from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, HumanMessage
+from langchain_core.runnables import RunnableConfig
+from app.lib.models import TravelResponse, MemoryExtractionResult
 from app.lib.utils import load_prompt
+from app.lib.db.store import MemoryStore
+from app.lib.db.models import TripMemoryLogEntry
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +39,37 @@ def format_response(state):
         "messages": extra_messages,
         "responses": state.get("responses", []) + [final],
     }
+
+
+def make_log_memory(store: MemoryStore):
+    def log_memory(state, config: RunnableConfig):
+        trip_id = config["configurable"]["thread_id"]
+        if store.get_trip(trip_id) is None:
+            return {}
+
+        last_human = next(
+            (m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)),
+            None
+        )
+        if last_human is None:
+            return {}
+
+        llm = ChatAnthropic(
+            model_name="claude-haiku-4-5-20251001", temperature=0,
+            api_key=os.getenv("ANTHROPIC_API_KEY")
+        ).with_structured_output(MemoryExtractionResult)
+        system_prompt = load_prompt("app/lib/prompts/log_memory_prompt.txt")
+        response: MemoryExtractionResult = llm.invoke(
+            [SystemMessage(content=system_prompt), HumanMessage(content=last_human.content)]
+        )
+
+        if response.memory_entry:
+            store.add_memory_entry(TripMemoryLogEntry(trip_id=trip_id, content=response.memory_entry))
+            logger.info("log_memory: stored '%s' for trip %s", response.memory_entry, trip_id)
+
+        return {}
+
+    return log_memory
 
 
 def make_call_model(llm, profile, chatbot_tools=None):

@@ -1,12 +1,8 @@
-import json
-from pathlib import Path
 from langchain_core.tools import tool, StructuredTool
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_agent
 from app.lib.models import TravelResponse
 from app.lib.tavily_search import tavily_client
-
-DATA_DIR = Path(__file__).parent.parent.parent / "data" / "search"
 
 
 @tool
@@ -18,11 +14,10 @@ def search_nightlife(nightlife_query: str) -> list[dict]:
     Args:
         nightlife_query (str): A string containing a nightlife-related search (e.g city name + 'live music').
     """
-    with open(DATA_DIR / "nightlife.json", "r", encoding="utf-8") as f:
-        data = json.load(f)
+    results = tavily_client.search(nightlife_query, max_results=6)
     return [
         {"title": r["title"], "content": r["content"], "url": r["url"]}
-        for r in data["results"]
+        for r in results["results"]
     ]
 
 
@@ -44,11 +39,10 @@ def search_budget(budget_query: str) -> list[dict]:
     Args:
         budget_query (str): A string containing a budget-related search (e.g city name + 'daily costs').
     """
-    with open(DATA_DIR / "budget.json", "r", encoding="utf-8") as f:
-        data = json.load(f)
+    results = tavily_client.search(budget_query, max_results=6)
     return [
         {"title": r["title"], "content": r["content"], "url": r["url"]}
-        for r in data["results"]
+        for r in results["results"]
     ]
 
 
