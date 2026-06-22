@@ -7,3 +7,4 @@ from app.lib.models import TravelResponse
 class State(TypedDict):
     messages: Annotated[list, add_messages]
     responses: list[TravelResponse]
+    trip_context: str

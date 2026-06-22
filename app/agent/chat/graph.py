@@ -3,7 +3,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
 from app.agent.chat.state import State
-from app.agent.chat.nodes import trim_messages, make_call_model, format_response, make_log_memory
+from app.agent.chat.nodes import trim_messages, make_call_model, format_response, make_log_memory, make_inject_context
 from app.lib.db.store import MemoryStore
 from app.agent.chat.tools import make_nightlife_agent_tool, make_budget_agent_tool, make_side_quest_agent_tool, make_respond_tool
 from app.lib.utils import load_profile, load_prompt
@@ -34,12 +34,14 @@ def build_workflow(llm: BaseChatModel, checkpointer: BaseCheckpointSaver):
 
     builder = StateGraph(State)
     builder.add_node("trim_messages", trim_messages)
+    builder.add_node("inject_context", make_inject_context(store))
     builder.add_node("call_model", make_call_model(llm, profile, chatbot_tools))
     builder.add_node("tool_node", ToolNode(chatbot_tools))
     builder.add_node("format_response", format_response)
     builder.add_node("log_memory", make_log_memory(store))
     builder.add_edge(START, "trim_messages")
-    builder.add_edge("trim_messages", "call_model")
+    builder.add_edge("trim_messages", "inject_context")
+    builder.add_edge("inject_context", "call_model")
     builder.add_conditional_edges("call_model", should_continue)
     builder.add_edge("tool_node", "call_model")
     builder.add_edge("format_response", "log_memory")

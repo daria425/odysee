@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime, timezone
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
@@ -41,6 +42,39 @@ def format_response(state):
     }
 
 
+def make_inject_context(store: MemoryStore):
+    def inject_context(state, config: RunnableConfig):
+        trip_id = config["configurable"]["thread_id"]
+        trip = store.get_trip(trip_id)
+        if trip is None:
+            return {"trip_context": ""}
+
+        today = datetime.now(timezone.utc).strftime("%A, %d %B %Y")
+        entries = store.get_memory_entries(trip_id, limit=15)
+
+        lines = [
+            "## Active Trip",
+            f"Name: {trip.name}",
+            f"Destinations: {', '.join(trip.destinations)}",
+            f"Travel date: {trip.start_date}",
+            "",
+            f"## Today\n{today}",
+        ]
+
+        if entries:
+            lines.append("\n## Trip Memory")
+            for e in entries:
+                ts = datetime.fromisoformat(e.created_at).strftime("%d %b %Y, %H:%M")
+                lines.append(f"[{ts}] {e.content}")
+
+        if trip.notes:
+            lines.append(f"\n## Notes\n{trip.notes}")
+
+        return {"trip_context": "\n".join(lines)}
+
+    return inject_context
+
+
 def make_log_memory(store: MemoryStore):
     def log_memory(state, config: RunnableConfig):
         trip_id = config["configurable"]["thread_id"]
@@ -77,6 +111,8 @@ def make_call_model(llm, profile, chatbot_tools=None):
 
     def call_model(state):
         system_prompt = load_prompt("app/lib/prompts/chat_prompt.txt", user_profile=profile)
+        if trip_context := state.get("trip_context"):
+            system_prompt += f"\n\n{trip_context}"
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
         response = chat_llm.invoke(messages)
         return {"messages": [response]}
