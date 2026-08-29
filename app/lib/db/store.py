@@ -28,7 +28,10 @@ class MemoryStore:
                     start_date  TEXT,
                     end_date    TEXT,
                     notes       TEXT,
-                    created_at  TEXT NOT NULL
+                    created_at  TEXT NOT NULL,
+                    research_status TEXT NOT NULL DEFAULT 'not_started',
+                    research_report TEXT,
+                    research_error  TEXT
                 )
             """)
             conn.execute("""
@@ -44,10 +47,20 @@ class MemoryStore:
         trip = trip.model_copy(update={"created_at": trip.created_at or datetime.now(timezone.utc).isoformat()})
         with self._connect() as conn:
             conn.execute(
-                "INSERT INTO trips (trip_id, name, destinations, start_date, end_date, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (trip.trip_id, trip.name, json.dumps(trip.destinations), trip.start_date, trip.end_date, trip.notes, trip.created_at),
+                "INSERT INTO trips (trip_id, name, destinations, start_date, end_date, notes, created_at, research_status, research_report, research_error) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (trip.trip_id, trip.name, json.dumps(trip.destinations), trip.start_date, trip.end_date, trip.notes, trip.created_at,
+                 trip.research_status, trip.research_report, trip.research_error),
             )
         return trip
+
+    def update_research_status(self, trip_id: str, status: str, report: str | None = None, error: str | None = None) -> Trip | None:
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE trips SET research_status = ?, research_report = ?, research_error = ? WHERE trip_id = ?",
+                (status, report, error, trip_id),
+            )
+        return self.get_trip(trip_id)
 
     def get_trip(self, trip_id: str) -> Trip | None:
         with self._connect() as conn:
@@ -87,6 +100,9 @@ class MemoryStore:
             end_date=row["end_date"],
             notes=row["notes"],
             created_at=row["created_at"],
+            research_status=row["research_status"],
+            research_report=row["research_report"],
+            research_error=row["research_error"],
         )
 
     def _row_to_memory_entry(self, row: sqlite3.Row) -> TripMemoryLogEntry:

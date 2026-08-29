@@ -10,6 +10,9 @@ class Trip(BaseModel):
     end_date: Optional[str] = None
     notes: Optional[str] = None
     created_at: Optional[str] = None
+    research_status: str = "not_started"  # not_started | running | done | failed
+    research_report: Optional[str] = None
+    research_error: Optional[str] = None
 
 
 class TripMemoryLogEntry(BaseModel):
