@@ -32,7 +32,7 @@ def generate_queries(state: OverallState, config: RunnableConfig):
     """
     messages = [SystemMessage(content=system_prompt),
                 HumanMessage(content=user_msg)]
-    logger.info("generate_queries: %s / %s", state["destination"], state["travel_date"])
+    logger.info("[generate_queries] %s / %s", state["destination"], state["travel_date"])
     response: SearchQueryList = llm.invoke(messages)
     formatted_queries = [
         {"question": q, "search_query": s, "id": i} for i, (q, s) in enumerate(response.queries.items())
@@ -55,7 +55,7 @@ def create_web_research_nodes(state: OverallState):
 
 
 def web_research(state: WebSearchState, config: RunnableConfig):
-    logger.info("web_research: %s", state["question"])
+    logger.info("[web_research] %s", state["question"])
     configuration = Configuration.from_runnable_config(config)
     results = tavily_client.search(
         state["search_query"], max_results=configuration.max_search_results)["results"]
@@ -90,7 +90,7 @@ def should_regenerate(state: OverallState, config: RunnableConfig):
     response: RegenerateResponse = llm.invoke(
         [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
     results = state["web_research_result"]
-    logger.info("should_regenerate: round %d, flagging %d/%d answers", state.get("reflection_count", 0), len(response.queries_to_regenerate or []), len(results))
+    logger.info("[should_regenerate] round %d, flagging %d/%d answers", state.get("reflection_count", 0), len(response.queries_to_regenerate or []), len(results))
     queries_to_regenerate = [
         {
             "initial_user_question": results[item.item_index]["question"],
@@ -112,7 +112,7 @@ def route_after_reflection(state: OverallState):
 
 
 def finalize_answer(state: OverallState, config: RunnableConfig):
-    logger.info("finalize_answer: %s", state["destination"])
+    logger.info("[finalize_answer] %s", state["destination"])
     configuration = Configuration.from_runnable_config(config)
     llm = ChatAnthropic(model_name=configuration.synthesis_model,
                         temperature=0.3, api_key=os.getenv("ANTHROPIC_API_KEY"))

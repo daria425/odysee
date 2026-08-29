@@ -31,11 +31,11 @@ def format_response(state):
             ToolMessage(content="ok", tool_call_id=tool_call["id"]),
             AIMessage(content=final.chat_response),
         ]
-        logger.info("format_response: structured respond tool")
+        logger.info("[format_response] structured respond tool")
     else:
         final = TravelResponse(chat_response=last.content)
         extra_messages = []
-        logger.info("format_response: plain text fallback")
+        logger.info("[format_response] plain text fallback")
     return {
         "messages": extra_messages,
         "responses": state.get("responses", []) + [final],
@@ -99,7 +99,7 @@ def make_log_memory(store: MemoryStore):
 
         if response.memory_entry:
             store.add_memory_entry(TripMemoryLogEntry(trip_id=trip_id, content=response.memory_entry))
-            logger.info("log_memory: stored '%s' for trip %s", response.memory_entry, trip_id)
+            logger.info("[log_memory] stored '%s' for trip %s", response.memory_entry, trip_id)
 
         return {}
 

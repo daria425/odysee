@@ -40,7 +40,7 @@ def chat(request: APIChatRequest, fastapi_request: Request):
             msg = "usage: /start <name> | <destinations> | <date>  e.g. /start Georgia Trip | Tbilisi, Yerevan | June 2026"
             return APIChatResponse(thread_id=request.thread_id, langfuse_session_id=request.langfuse_session_id, chat_response=msg)
         store.create_trip(trip)
-        logger.info("trip created id=%s name=%s", trip.trip_id, trip.name)
+        logger.info("[chat:/start] trip created id=%s name=%s", trip.trip_id, trip.name)
         msg = f"Trip '{trip.name}' created. Destinations: {', '.join(trip.destinations)}. Date: {trip.start_date}."
         return APIChatResponse(thread_id=request.thread_id, langfuse_session_id=request.langfuse_session_id, chat_response=msg)
 
@@ -50,7 +50,7 @@ def chat(request: APIChatRequest, fastapi_request: Request):
         "callbacks": [app.state.langfuse_handler],
         "metadata": {"langfuse_session_id": request.langfuse_session_id}
     }
-    logger.info("chat request thread=%s", request.thread_id)
+    logger.info("[chat] request thread=%s", request.thread_id)
     state = workflow.invoke(
         {"messages": [HumanMessage(content=request.user_message)]},
         config=config,
