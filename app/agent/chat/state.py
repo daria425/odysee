@@ -8,3 +8,4 @@ class State(TypedDict):
     messages: Annotated[list, add_messages]
     responses: list[TravelResponse]
     trip_context: str
+    report_covered: bool

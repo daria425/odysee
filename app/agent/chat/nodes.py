@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, HumanMessage
 from langchain_core.runnables import RunnableConfig
-from app.lib.models import TravelResponse, MemoryExtractionResult
+from app.lib.models import TravelResponse, MemoryExtractionResult, ReportCoverageResult
 from app.lib.utils import load_prompt
 from app.lib.db.store import MemoryStore
 from app.lib.db.models import TripMemoryLogEntry
@@ -70,9 +70,43 @@ def make_inject_context(store: MemoryStore):
         if trip.notes:
             lines.append(f"\n## Notes\n{trip.notes}")
 
+        if trip.research_status == "done" and trip.research_report:
+            lines.append(f"\n## Trip Report\n{trip.research_report}")
+
         return {"trip_context": "\n".join(lines)}
 
     return inject_context
+
+
+def make_check_report_coverage(store: MemoryStore):
+    def check_report_coverage(state, config: RunnableConfig):
+        trip_id = config["configurable"]["thread_id"]
+        trip = store.get_trip(trip_id)
+        if trip is None or trip.research_status != "done" or not trip.research_report:
+            return {"report_covered": False}
+
+        last_human = next(
+            (m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)),
+            None
+        )
+        if last_human is None:
+            return {"report_covered": False}
+
+        llm = ChatAnthropic(
+            model_name="claude-haiku-4-5-20251001", temperature=0,
+            api_key=os.getenv("ANTHROPIC_API_KEY")
+        ).with_structured_output(ReportCoverageResult)
+        system_prompt = load_prompt(
+            "app/lib/prompts/check_report_coverage_prompt.txt",
+            report=trip.research_report,
+        )
+        response: ReportCoverageResult = llm.invoke(
+            [SystemMessage(content=system_prompt), HumanMessage(content=last_human.content)], config
+        )
+        logger.info("[check_report_coverage] covered=%s trip=%s", response.covered, trip_id)
+        return {"report_covered": response.covered}
+
+    return check_report_coverage
 
 
 def make_log_memory(store: MemoryStore):
@@ -94,7 +128,7 @@ def make_log_memory(store: MemoryStore):
         ).with_structured_output(MemoryExtractionResult)
         system_prompt = load_prompt("app/lib/prompts/log_memory_prompt.txt")
         response: MemoryExtractionResult = llm.invoke(
-            [SystemMessage(content=system_prompt), HumanMessage(content=last_human.content)]
+            [SystemMessage(content=system_prompt), HumanMessage(content=last_human.content)], config
         )
 
         if response.memory_entry:
@@ -106,14 +140,16 @@ def make_log_memory(store: MemoryStore):
     return log_memory
 
 
-def make_call_model(llm, profile, chatbot_tools=None):
-    chat_llm = llm.bind_tools(chatbot_tools or [])
+def make_call_model(llm, profile, chatbot_tools, respond_tool):
+    chat_llm_full = llm.bind_tools(chatbot_tools)
+    chat_llm_report_only = llm.bind_tools([respond_tool])
 
     def call_model(state):
         system_prompt = load_prompt("app/lib/prompts/chat_prompt.txt", user_profile=profile)
         if trip_context := state.get("trip_context"):
             system_prompt += f"\n\n{trip_context}"
         messages = [SystemMessage(content=system_prompt)] + state["messages"]
+        chat_llm = chat_llm_report_only if state.get("report_covered") else chat_llm_full
         response = chat_llm.invoke(messages)
         return {"messages": [response]}
 

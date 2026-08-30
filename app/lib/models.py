@@ -52,3 +52,9 @@ class MemoryExtractionResult(BaseModel):
         default=None,
         description="A single concise sentence capturing a trip fact worth remembering, or null if nothing to log"
     )
+
+
+class ReportCoverageResult(BaseModel):
+    covered: bool = Field(
+        description="True only if the trip report already contains the specific information needed to answer the user's question"
+    )
