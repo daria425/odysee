@@ -28,10 +28,12 @@ class MemoryStore:
                     start_date  TEXT,
                     end_date    TEXT,
                     notes       TEXT,
-                    created_at  TEXT NOT NULL,
                     research_status TEXT NOT NULL DEFAULT 'not_started',
                     research_report TEXT,
-                    research_error  TEXT
+                    research_error  TEXT, 
+                    created_at  TEXT NOT NULL,
+                    research_updated_at TEXT,
+                    research_started_at TEXT
                 )
             """)
             conn.execute("""
@@ -44,7 +46,8 @@ class MemoryStore:
             """)
 
     def create_trip(self, trip: Trip) -> Trip:
-        trip = trip.model_copy(update={"created_at": trip.created_at or datetime.now(timezone.utc).isoformat()})
+        trip = trip.model_copy(
+            update={"created_at": trip.created_at or datetime.now(timezone.utc).isoformat()})
         with self._connect() as conn:
             conn.execute(
                 "INSERT INTO trips (trip_id, name, destinations, start_date, end_date, notes, created_at, research_status, research_report, research_error) "
@@ -55,23 +58,32 @@ class MemoryStore:
         return trip
 
     def update_research_status(self, trip_id: str, status: str, report: str | None = None, error: str | None = None) -> Trip | None:
+        now = datetime.now(timezone.utc).isoformat()
         with self._connect() as conn:
-            conn.execute(
-                "UPDATE trips SET research_status = ?, research_report = ?, research_error = ? WHERE trip_id = ?",
-                (status, report, error, trip_id),
-            )
+            if status == "running":
+                conn.execute(
+                    "UPDATE trips SET research_status = ?, research_report = ?, research_error = ?, research_started_at = ?, research_updated_at = ? WHERE trip_id = ?",
+                    (status, report, error, now, now, trip_id),
+                )
+            else:
+                conn.execute(
+                    "UPDATE trips SET research_status = ?, research_report = ?, research_error = ?, research_updated_at = ? WHERE trip_id = ?",
+                    (status, report, error, now, trip_id),
+                )
         return self.get_trip(trip_id)
 
     def get_trip(self, trip_id: str) -> Trip | None:
         with self._connect() as conn:
-            row = conn.execute("SELECT * FROM trips WHERE trip_id = ?", (trip_id,)).fetchone()
+            row = conn.execute(
+                "SELECT * FROM trips WHERE trip_id = ?", (trip_id,)).fetchone()
         if row is None:
             return None
         return self._row_to_trip(row)
 
     def list_trips(self) -> list[Trip]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM trips ORDER BY created_at DESC").fetchall()
+            rows = conn.execute(
+                "SELECT * FROM trips ORDER BY created_at DESC").fetchall()
         return [self._row_to_trip(r) for r in rows]
 
     def add_memory_entry(self, entry: TripMemoryLogEntry) -> TripMemoryLogEntry:
@@ -103,6 +115,8 @@ class MemoryStore:
             research_status=row["research_status"],
             research_report=row["research_report"],
             research_error=row["research_error"],
+            research_updated_at=row["research_updated_at"],
+            research_started_at=row["research_started_at"],
         )
 
     def _row_to_memory_entry(self, row: sqlite3.Row) -> TripMemoryLogEntry:

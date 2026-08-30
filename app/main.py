@@ -51,6 +51,8 @@ def _research_status_message(trip: Trip) -> dict:
         "status": trip.research_status,
         "report": trip.research_report,
         "error": trip.research_error,
+        "research_started_at": trip.research_started_at,
+        "research_updated_at": trip.research_updated_at,
     }
 
 
