@@ -1,0 +1,166 @@
+{
+  "description": "Eval set for the check_report_coverage node (app/agent/chat/nodes.py). Each item pairs a trip report with a traveller question and the expected covered:boolean verdict. All items share the same underlying report (evals/reports/rostock_2026-10.md) so ground truth can be checked directly against real report text. False positives (covered=true when the report only mentions the topic, not the specific fact) are the priority failure mode to catch.",
+  "report_ref": "rostock_2026-10",
+  "items": [
+    {
+      "id": "neg-trace-techno-events",
+      "question": "is there any particular techno events going on in october?",
+      "expected_covered": false,
+      "category": "tricky_negative",
+      "source": "trace",
+      "notes": "Real trace (trace_id df7be503bede21004798c07d47cb5ec5). Report's Nightlife section explicitly flags this as a research gap: 'Specific techno/industrial/hard techno nights weren't confirmed in the research.'"
+    },
+    {
+      "id": "neg-tram-weekend-schedule",
+      "question": "can I count on the tram to get me home from KTV around midnight on a Saturday?",
+      "expected_covered": false,
+      "category": "tricky_negative",
+      "source": "synthetic",
+      "notes": "Report mentions trams generally and that weekday lines end 8-11pm, but explicitly says 'Weekend schedules weren't confirmed in research' -- topic present, specific fact missing."
+    },
+    {
+      "id": "neg-sixt-exact-fare",
+      "question": "what's the exact SIXT Ride fare from the airport to the city centre?",
+      "expected_covered": false,
+      "category": "tricky_negative",
+      "source": "synthetic",
+      "notes": "Report mentions SIXT Ride as an airport option but says 'exact price not confirmed but aligned to local taxi rates' -- no concrete number."
+    },
+    {
+      "id": "neg-restaurant-recommendation",
+      "question": "is there a specific restaurant in KTV you'd recommend for dinner?",
+      "expected_covered": false,
+      "category": "tricky_negative",
+      "source": "synthetic",
+      "notes": "Budget section gives a food cost estimate (EUR25-35/day) but names zero restaurants -- cost topic covered, the actual ask (a recommendation) is not."
+    },
+    {
+      "id": "neg-exchange-rate",
+      "question": "what's the GBP to EUR exchange rate right now so I can convert my budget?",
+      "expected_covered": false,
+      "category": "tricky_negative",
+      "source": "synthetic",
+      "notes": "Payment/budget is discussed but no exchange rate appears anywhere in the report."
+    },
+    {
+      "id": "neg-tram-specific-line",
+      "question": "which tram number do I take from the train station to KTV?",
+      "expected_covered": false,
+      "category": "tricky_negative",
+      "source": "synthetic",
+      "notes": "Report confirms a tram network exists but gives no line numbers or routes."
+    },
+    {
+      "id": "pos-trace-hotel-price",
+      "question": "the hotel i am looking at is like 55 pounds a night? whats we thinking? scam or too cheap",
+      "expected_covered": true,
+      "category": "straightforward_positive",
+      "source": "trace",
+      "notes": "Real trace (trace_id f9c2587862b6e44ec9b7122d7b12702a). Budget section gives Accommodation: EUR60-80/night, directly answering whether ~55 GBP is in range."
+    },
+    {
+      "id": "pos-airport-taxi-cost",
+      "question": "how much should a taxi from the airport cost?",
+      "expected_covered": true,
+      "category": "straightforward_positive",
+      "source": "synthetic",
+      "notes": "Getting Around section gives Taxi: EUR30-42, about 11 minutes."
+    },
+    {
+      "id": "pos-ktv-night-safety",
+      "question": "is it safe to walk alone at night in the KTV area?",
+      "expected_covered": true,
+      "category": "straightforward_positive",
+      "source": "synthetic",
+      "notes": "Safety section states KTV/Altstadt are safe and well-populated Thu-Sat nights and lists concrete practical patterns for staying safe there."
+    },
+    {
+      "id": "pos-club-closing-time",
+      "question": "when do the clubs actually close, is 2am too early to show up?",
+      "expected_covered": true,
+      "category": "straightforward_positive",
+      "source": "synthetic",
+      "notes": "Nightlife section states explicitly: 'Bars close at 2am.'"
+    },
+    {
+      "id": "pos-daily-spend-with-night-out",
+      "question": "roughly how much am I spending per day including a night out?",
+      "expected_covered": true,
+      "category": "straightforward_positive",
+      "source": "synthetic",
+      "notes": "Budget section gives a full breakdown totalling 'roughly EUR120-180' on a night-out day."
+    },
+    {
+      "id": "neg-visa-requirements",
+      "question": "do I need a visa to enter Germany?",
+      "expected_covered": false,
+      "category": "straightforward_negative",
+      "source": "synthetic",
+      "notes": "Visa/entry requirements are never mentioned anywhere in the report."
+    },
+    {
+      "id": "neg-weather-packing",
+      "question": "what's the weather going to be like in October, should I pack a coat?",
+      "expected_covered": false,
+      "category": "straightforward_negative",
+      "source": "synthetic",
+      "notes": "Weather and packing are never mentioned anywhere in the report."
+    },
+    {
+      "id": "neg-travel-insurance",
+      "question": "is travel insurance worth getting for this trip?",
+      "expected_covered": false,
+      "category": "straightforward_negative",
+      "source": "synthetic",
+      "notes": "Travel insurance is never mentioned anywhere in the report."
+    },
+    {
+      "id": "neg-other-day-trips",
+      "question": "are there any good day trips outside Rostock besides Warnemunde?",
+      "expected_covered": false,
+      "category": "straightforward_negative",
+      "source": "synthetic",
+      "notes": "Warnemunde is the only day-trip destination discussed; no other options are mentioned."
+    },
+    {
+      "id": "pos-card-vs-cash",
+      "question": "should I just use my UK card everywhere or carry cash?",
+      "expected_covered": true,
+      "category": "tricky_positive",
+      "source": "synthetic",
+      "notes": "Requires connecting the Budget section's 'Card is widely accepted. Carry some cash for smaller bars and market stalls' to the question's card-vs-cash framing rather than a direct keyword match."
+    },
+    {
+      "id": "neg-uber-unconfirmed",
+      "question": "can I just use Uber to get around Rostock?",
+      "expected_covered": false,
+      "category": "tricky_negative",
+      "source": "synthetic",
+      "notes": "Report only says 'Uber and Bolt are not confirmed as operating in Rostock specifically' -- an unconfirmed status isn't a usable answer, so this is a gap requiring live search, not coverage. Prompt now has an explicit rule for this (see app/lib/prompts/check_report_coverage_prompt.txt)."
+    },
+    {
+      "id": "pos-bunker-dress-code",
+      "question": "is Bunker one of those places with a strict dress code I need to worry about?",
+      "expected_covered": true,
+      "category": "tricky_positive",
+      "source": "synthetic",
+      "notes": "Nightlife section: 'Casual. No research flagged strict door policies or dress requirements.' -- directly answers despite the question not naming the report's terms."
+    },
+    {
+      "id": "neg-offtopic-capital-of-france",
+      "question": "what's the capital of France?",
+      "expected_covered": false,
+      "category": "edge_off_topic",
+      "source": "synthetic",
+      "notes": "Not about the trip at all; prompt instructs covered=false for off-topic questions regardless of report content."
+    },
+    {
+      "id": "neg-offtopic-unrelated-request",
+      "question": "can you help me debug my python script, it's throwing a KeyError",
+      "expected_covered": false,
+      "category": "edge_off_topic",
+      "source": "synthetic",
+      "notes": "Unrelated to the trip; same off-topic rule as above, phrased as a request rather than a question."
+    }
+  ]
+}

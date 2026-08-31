@@ -76,6 +76,8 @@ Core idea:
 
 Report graph is inspired by https://towardsdatascience.com/langgraph-101-lets-build-a-deep-research-agent/ article and https://github.com/google-gemini/gemini-fullstack-langgraph-quickstart github repo (which I have a local clone of at "\\wsl.localhost\Ubuntu\home\daria\projects\gemini-fullstack-langgraph-quickstart")
 
+Check/review .claude/handoff.md for latest project state and next steps
+
 ## DB Schema (`data/travel_agent.db`, sqlite)
 
 App-owned tables (created by `MemoryStore._init_db()` in `app/lib/db/store.py`):

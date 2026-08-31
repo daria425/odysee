@@ -5,6 +5,9 @@ Return covered = true only if the report states the actual data point the questi
 Example: question asks "is 70 euros a night a scam for a hotel?" — covered = true only if the report gives hotel price ranges, not just general budget info.
 Example: question asks "is nightlife safe for a solo woman?" — covered = true only if the report addresses solo female safety specifically, not just nightlife areas in general.
 
+If the report flags the answer itself as unconfirmed, uncertain, or not verified, return covered = false — the traveller still has no usable answer and needs a live search, even though the report mentions the topic.
+Example: question asks "can I just use Uber to get around?" and the report says "Uber is not confirmed as operating here" — covered = false, since that's not an answer the traveller can rely on.
+
 If the question is not about the trip at all, or the report is empty, return covered = false.
 
 The traveller's question will be given as the next message.
