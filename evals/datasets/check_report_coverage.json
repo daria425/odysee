@@ -11,12 +11,12 @@
       "notes": "Real trace (trace_id df7be503bede21004798c07d47cb5ec5). Report's Nightlife section explicitly flags this as a research gap: 'Specific techno/industrial/hard techno nights weren't confirmed in the research.'"
     },
     {
-      "id": "neg-tram-weekend-schedule",
+      "id": "pos-tram-weekend-schedule",
       "question": "can I count on the tram to get me home from KTV around midnight on a Saturday?",
-      "expected_covered": false,
-      "category": "tricky_negative",
+      "expected_covered": true,
+      "category": "tricky_positive",
       "source": "synthetic",
-      "notes": "Report mentions trams generally and that weekday lines end 8-11pm, but explicitly says 'Weekend schedules weren't confirmed in research' -- topic present, specific fact missing."
+      "notes": "Report says weekend schedules weren't confirmed, but then gives a direct actionable answer anyway: 'don't count on trams getting you home after midnight.' That caveat resolves the traveller's actual question, same pattern as neg-uber-unconfirmed's 'not confirmed as operating' -- except here the report follows up with practical guidance, so unlike Uber this should be covered=true. Mislabelled false in the first draft; corrected after check_report_coverage_2026_08_31 run flagged it as a 'false positive' that was actually a correct model answer."
     },
     {
       "id": "neg-sixt-exact-fare",

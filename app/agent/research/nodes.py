@@ -61,7 +61,7 @@ def web_research(state: WebSearchState, config: RunnableConfig):
         state["search_query"], max_results=configuration.max_search_results)["results"]
     context = "\n\n".join(
         f"Source: {r['title']}\nURL: {r['url']}\n{r['content']}" for r in results)
-    sources = [{"url": r["url"], "title": r["title"]} for r in results]
+    sources = [{"url": r["url"], "title": r["title"], "content": r["content"]} for r in results]
 
     llm = ChatAnthropic(model_name=configuration.research_model,
                         temperature=0, api_key=os.getenv("ANTHROPIC_API_KEY"))
@@ -72,7 +72,7 @@ def web_research(state: WebSearchState, config: RunnableConfig):
 
     return {
         "sources_gathered": sources,
-        "web_research_result": [{"question": state["question"], "answer": response.content, "search_query": state["search_query"]}],
+        "web_research_result": [{"question": state["question"], "answer": response.content, "search_query": state["search_query"], "sources": sources}],
     }
 
 

@@ -27,10 +27,10 @@ and give the user a shallow, unflagged answer.
 
 | category | count |
 |---|---|
-| tricky_negative | 7 |
+| tricky_negative | 6 |
 | straightforward_positive | 5 |
 | straightforward_negative | 4 |
-| tricky_positive | 2 |
+| tricky_positive | 3 |
 | edge_off_topic | 2 |
 
 2 of the 20 items (`neg-trace-techno-events`, `pos-trace-hotel-price`) are taken verbatim from real
