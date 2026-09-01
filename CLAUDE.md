@@ -154,6 +154,24 @@ POST /chat
 
 Confirm via the `[check_report_coverage] covered=...` log line and the Langfuse trace which branch (`report_covered` true/false) was taken.
 
+## Evals depend on frozen fixtures — check before changing the nodes they cover
+
+`evals/` datasets are built from fixtures captured at a point in time (a real report + `web_research_result`
+with sources, e.g. `evals/reports/khiva_2026-10.md`). Eval scripts do **not** re-run the graph — they test
+prompts/judges against the frozen fixture. So:
+
+- Changing `app/lib/prompts/check_report_coverage_prompt.txt` or `check_report_coverage`'s logic → re-run
+  `evals/scripts/run_check_report_coverage_experiment.py`; the fixture report itself doesn't need to change.
+- Changing `app/agent/research/nodes.py` (`web_research`, `finalize_answer` — anything that changes what a
+  report or `sources` looks like) → the existing fixtures are now stale/unrepresentative of current graph
+  output. Check whether `evals/reports/*` and `evals/calibration/*` need to be regenerated from a fresh graph
+  run before trusting eval results against the new code.
+- The groundedness judge (`evals/lib/groundedness_judge.py`, prompt at
+  `evals/prompts/groundedness_judge_prompt.txt`) is **not wired into the app** — it's a standalone eval judge
+  run only via `evals/scripts/run_groundedness_experiment.py` against `evals/calibration/`. Changing the judge
+  prompt/architecture directly affects that eval; changing the research graph's synthesis nodes does not
+  automatically get retested by it (see fixture staleness above).
+
 ## Known Issues / Gotchas
 
 - **Anthropic API rejects system-only message lists.** `anthropic.BadRequestError: messages: at least one message is required` — the Anthropic API requires at least one non-system message in the request; a `[SystemMessage(...)]`-only call fails even though the system prompt has content. Any templated user-facing content (e.g. the question a small structured-output LLM call is judging) must go in a separate `HumanMessage`, never interpolated into the system prompt string. If there's genuinely no user-relevant content, still send a minimal `HumanMessage` rather than omitting it.

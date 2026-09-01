@@ -76,7 +76,8 @@ async def run_research(store: MemoryStore, trip: Trip, langfuse_handler: Callbac
 
     try:
         result = await research_workflow.ainvoke(state, config)
-        store.update_research_status(trip.trip_id, "done", report=result["report"])
+        store.update_research_status(
+            trip.trip_id, "done", report=result["report"])
         logger.info("[run_research] done trip=%s", trip.trip_id)
     except Exception as e:
         store.update_research_status(trip.trip_id, "failed", error=str(e))
@@ -99,6 +100,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
 @app.post("/chat", response_model=APIChatResponse)
 async def chat(request: APIChatRequest, fastapi_request: Request):
     if request.user_message.startswith("/start"):
@@ -109,8 +115,10 @@ async def chat(request: APIChatRequest, fastapi_request: Request):
             msg = "usage: /start <name> | <destinations> | <date>  e.g. /start Georgia Trip | Tbilisi, Yerevan | June 2026"
             return APIChatResponse(thread_id=request.thread_id, langfuse_session_id=request.langfuse_session_id, chat_response=msg)
         trip = store.create_trip(trip)
-        logger.info("[chat:/start] trip created id=%s name=%s", trip.trip_id, trip.name)
-        asyncio.create_task(run_research(store, trip, fastapi_request.app.state.langfuse_handler))
+        logger.info("[chat:/start] trip created id=%s name=%s",
+                    trip.trip_id, trip.name)
+        asyncio.create_task(run_research(
+            store, trip, fastapi_request.app.state.langfuse_handler))
         msg = f"Trip '{trip.name}' created. Destinations: {', '.join(trip.destinations)}. Date: {trip.start_date}. Researching now — connect to /ws/trip/{trip.trip_id} for status."
         return APIChatResponse(thread_id=request.thread_id, langfuse_session_id=request.langfuse_session_id, chat_response=msg)
 

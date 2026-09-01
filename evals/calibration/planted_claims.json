@@ -1,0 +1,107 @@
+{
+  "genuine_baseline": "khiva_2026-10_genuine.md",
+  "note": "Ground truth for the groundedness judge calibration set. Each variant is the genuine report with specific claims altered. The judge should flag every 'planted_claims' entry as unsupported/contradicted and should NOT flag anything else as unsupported (false-positive check) when run against the genuine baseline. 'match_keyword' is a distinctive substring (case-insensitive) expected to appear in whatever paraphrase the judge extracts for this claim -- used by run_groundedness_experiment.py to match judge output back to planted claims without exact-string matching.",
+  "variants": [
+    {
+      "file": "khiva_2026-10_variant_numeric_swap.md",
+      "type": "numeric_swap",
+      "description": "Real, sourced numbers replaced with different plausible-looking numbers that contradict the raw source content.",
+      "planted_claims": [
+        {
+          "section": "Getting Around",
+          "claim": "Urgench airport is 60km away (roughly 45 minutes)",
+          "original": "33km away (roughly 30 minutes)",
+          "contradicts_source": "airport transfer web_research answer: 'Urgench to Khiva: $30 economy ($35 SUV, $40 minivan) — 33 km, ~30 minutes'",
+          "match_keyword": "60"
+        },
+        {
+          "section": "Getting Around",
+          "claim": "Pre-booked private transfer costs $45 economy car, $55 SUV",
+          "original": "$30 economy car, $35 SUV",
+          "contradicts_source": "airport transfer web_research answer: 'Urgench to Khiva: $30 economy ($35 SUV, $40 minivan)'",
+          "match_keyword": "$45"
+        },
+        {
+          "section": "Nightlife",
+          "claim": "Terrassa Café & Restaurant is open until 2am daily",
+          "original": "open until 11:30pm daily",
+          "contradicts_source": "report's own earlier synthesis of venue hours (11:30pm); 2am is not attested anywhere in web_research sources",
+          "match_keyword": "2am"
+        },
+        {
+          "section": "Connectivity",
+          "claim": "Beeline Tourist Start package costs $12 for 5GB + 7 days",
+          "original": "$3 for 15GB + 15 days",
+          "contradicts_source": "eSIM/SIM web_research answer describing the $3 / 15GB / 15-day Beeline Tourist Start package",
+          "match_keyword": "$12"
+        }
+      ]
+    },
+    {
+      "file": "khiva_2026-10_variant_fabricated.md",
+      "type": "fabrication",
+      "description": "Specific, confident-sounding claims added that appear nowhere in any web_research source and are not inferable from them.",
+      "planted_claims": [
+        {
+          "section": "Getting Around",
+          "claim": "A special night bus service runs between Itchan Kala and the new town every 30 minutes until 1am on Fridays and Saturdays",
+          "contradicts_source": "directly contradicts the sourced claim in the same report that buses stop at 10pm and that late-night transport is 'a genuine gap in Khiva'; no source mentions any night bus",
+          "match_keyword": "night bus"
+        },
+        {
+          "section": "Safety",
+          "claim": "In a 2026 survey, 94% of solo female travelers rated Khiva specifically as 'very safe,' the highest of any city in the country",
+          "contradicts_source": "no survey or statistic appears in any web_research source for the safety questions; fabricated precise figure",
+          "match_keyword": "94"
+        },
+        {
+          "section": "Nightlife",
+          "claim": "Khiva Sky Lounge — rooftop bar with a resident DJ, open until 1:30am on weekends, the closest thing to a club inside the old city walls",
+          "contradicts_source": "no such venue appears in any web_research source; directly contradicts the sourced claim that 'there is no club scene, no DJ nights, no techno' in Khiva",
+          "match_keyword": "Khiva Sky Lounge"
+        },
+        {
+          "section": "Connectivity",
+          "claim": "Ucell offers a tourist eSIM with unlimited data for $8/week that runs noticeably faster than Beeline in Khiva",
+          "contradicts_source": "eSIM web_research source states all eSIM providers (Airalo, Jetpac, Esimy) run on Beeline's network, the weakest carrier; no Ucell eSIM or speed comparison appears in any source",
+          "match_keyword": "Ucell"
+        }
+      ]
+    },
+    {
+      "file": "khiva_2026-10_variant_inverted.md",
+      "type": "inversion",
+      "description": "Real sourced claims flipped to their opposite.",
+      "planted_claims": [
+        {
+          "section": "Getting Around",
+          "claim": "Uber and Bolt both operate widely here alongside Yandex Go",
+          "original": "Uber and Bolt do not operate here",
+          "contradicts_source": "ride-hailing web_research answer: 'Uber... Does not work in Uzbekistan... Bolt: Available in Aze[rbaijan]...' (i.e. neither operates in Uzbekistan)",
+          "match_keyword": "Bolt"
+        },
+        {
+          "section": "Nightlife",
+          "claim": "Khiva has a small but lively club scene alongside its cultural venues",
+          "original": "There is no club scene, no DJ nights, no techno (in Khiva)",
+          "contradicts_source": "nightlife web_research synthesis explicitly states no club scene/DJ nights/techno in Khiva, that Tashkent is where the club scene is",
+          "match_keyword": "club scene"
+        },
+        {
+          "section": "Nightlife",
+          "claim": "CMI Bar is open every night of the week",
+          "original": "CMI Bar runs Thursday–Saturday only",
+          "contradicts_source": "'best nights' web_research answer: 'CMI Bar is only open these nights' (Thursday, Friday, Saturday)",
+          "match_keyword": "CMI Bar"
+        },
+        {
+          "section": "Budget",
+          "claim": "Card acceptance is excellent and widely accepted everywhere in Khiva, including small vendors and market stalls",
+          "original": "Card acceptance is inconsistent outside larger hotels",
+          "contradicts_source": "no source claims widespread card acceptance; original report's own payment guidance says the opposite and recommends carrying cash",
+          "match_keyword": "card"
+        }
+      ]
+    }
+  ]
+}
