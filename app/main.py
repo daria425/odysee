@@ -1,8 +1,9 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from langchain_core.messages import HumanMessage
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from langchain_core.messages import AIMessage, HumanMessage
 from langfuse.langchain import CallbackHandler
 from langchain_anthropic import ChatAnthropic
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -99,10 +100,50 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/trips", response_model=list[Trip])
+async def list_trips(fastapi_request: Request):
+    store: MemoryStore = fastapi_request.app.state.memory_store
+    return store.list_trips()
+
+
+@app.get("/trip/{trip_id}", response_model=Trip)
+async def get_trip(trip_id: str, fastapi_request: Request):
+    store: MemoryStore = fastapi_request.app.state.memory_store
+    trip = store.get_trip(trip_id)
+    if trip is None:
+        raise HTTPException(status_code=404, detail="trip not found")
+    return trip
+
+
+@app.get("/trip/{trip_id}/messages")
+async def get_trip_messages(trip_id: str, fastapi_request: Request):
+    workflow = fastapi_request.app.state.workflow
+    config = {"configurable": {"thread_id": trip_id}}
+    state = workflow.get_state(config)
+    messages = state.values.get("messages", []) if state else []
+
+    result = []
+    for m in messages:
+        if not isinstance(m, (HumanMessage, AIMessage)) or not isinstance(m.content, str) or not m.content:
+            continue
+        entry = {"role": "user" if isinstance(m, HumanMessage) else "assistant", "content": m.content}
+        if result and result[-1] == entry:
+            continue
+        result.append(entry)
+    return result
 
 
 @app.post("/chat", response_model=APIChatResponse)

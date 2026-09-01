@@ -167,11 +167,47 @@ prompts/judges against the frozen fixture. So:
   output. Check whether `evals/reports/*` and `evals/calibration/*` need to be regenerated from a fresh graph
   run before trusting eval results against the new code.
 - The groundedness judge (`evals/lib/groundedness_judge.py`, prompt at
-  `evals/prompts/groundedness_judge_prompt.txt`) is **not wired into the app** — it's a standalone eval judge
-  run only via `evals/scripts/run_groundedness_experiment.py` against `evals/calibration/`. Changing the judge
-  prompt/architecture directly affects that eval; changing the research graph's synthesis nodes does not
-  automatically get retested by it (see fixture staleness above).
+  `evals/prompts/groundedness_judge_prompt.txt`) is **not wired into the app itself** (no production node calls
+  it) but can be run against a fresh graph output directly via
+  `evals/scripts/judge_fresh_research_run.py --destination ... --travel-date ...` — this actually re-runs
+  `app/agent/research/graph.py` and judges its real output, so it's the right tool for "did my prompt change
+  make groundedness better or worse." `evals/scripts/run_groundedness_experiment.py` is the separate calibration
+  check against the frozen `evals/calibration/` set — re-run that only when the judge prompt/architecture itself
+  changes, not when the research graph changes.
 
 ## Known Issues / Gotchas
 
 - **Anthropic API rejects system-only message lists.** `anthropic.BadRequestError: messages: at least one message is required` — the Anthropic API requires at least one non-system message in the request; a `[SystemMessage(...)]`-only call fails even though the system prompt has content. Any templated user-facing content (e.g. the question a small structured-output LLM call is judging) must go in a separate `HumanMessage`, never interpolated into the system prompt string. If there's genuinely no user-relevant content, still send a minimal `HumanMessage` rather than omitting it.
+
+## Next Steps
+
+### Frontend Integration
+
+Building a React shell (chat window + header "Odysee" + sidebar with New Chat / Trips). Plan is to render
+the research report via [A2UI](https://a2ui.org/) (JSON-driven UI generation) rather than raw markdown, so
+the shell should stay a thin/generic renderer rather than accumulating bespoke report-display components.
+For now, run locally without Docker: backend via `poetry run` / `python -m app.main` (or however it's
+currently started — see `app/main.py`), frontend via `npm run dev`. Docker (for both self and "someone else
+clones the repo and runs it") and CI ("build backend + frontend on commit") are deferred — noted here so
+they aren't lost, not because they're unimportant.
+
+Gaps identified when scoping this (2026-09-01), not yet closed:
+
+- **No `GET /trips` or `GET /trip/{id}` REST endpoint.** Only `POST /chat` and `/ws/trip/{trip_id}` exist
+  today. The sidebar's Trips list and "load an existing trip" need at least `GET /trips` (list) and
+  `GET /trip/{id}` (fetch one, including `research_report`). Previously deferred deliberately in an earlier
+  session "until an actual client is wired in" — that's now.
+- **No CORS middleware in `app/main.py`.** A frontend dev server (e.g. Vite) on a different port than
+  FastAPI will be blocked by the browser until `CORSMiddleware` is added.
+- **No Dockerfile / docker-compose anywhere in the repo.** Needed later for "run locally via Docker,
+  including by someone else who just clones the repo": a backend Dockerfile (poetry-based), a frontend
+  Dockerfile, and a `docker-compose.yml` wiring both plus env vars from `.env`.
+- **SQLite persistence across container recreation.** `data/travel_agent.db` lives on disk at a path that's
+  gitignored (`data/`). A plain `docker restart` (same container) would NOT lose it — but
+  `docker compose down` / rebuild recreating the container WOULD, unless `./data:/app/data` (or equivalent)
+  is mounted as a volume in compose. Needs a volume mount when Docker is set up, not a code change.
+- **No CI config** (no `.github/workflows`) for "build backend + frontend on commit" — a separate GitHub
+  Actions setup, not yet started.
+- **DB already supports multiple trips** — checked, no gap: `trips.trip_id` is the primary key, and
+  `MemoryStore.create_trip` / `list_trips` / `get_trip` already support N independent trips.
+  `list_trips()` orders by `created_at DESC`, which is enough to back a Trips sidebar list as-is.

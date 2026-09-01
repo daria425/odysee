@@ -134,8 +134,20 @@ set -a && source .env && set +a
 poetry run python -m evals.scripts.run_groundedness_experiment
 ```
 
-Next: wire the judge to run against live/real reports (not just the calibration set) once a monitoring
-pattern is decided -- unlike `check_report_coverage`, live reports have no fixed expected output to score
-against, so this becomes a flagging/monitoring tool rather than a pass/fail accuracy check.
+To run the judge against a **fresh** research graph run -- for checking whether a change to
+`app/agent/research/nodes.py` made groundedness better or worse, since a live `/start` run only persists the
+final report text and discards `web_research_result`/sources once `run_research()` returns:
+
+```bash
+set -a && source .env && set +a
+poetry run python -m evals.scripts.judge_fresh_research_run --destination "Khiva" --travel-date "October 2026"
+# optionally: --save-to <dir>  to keep the report + sources from that specific run
+```
+
+This re-runs the real graph (not the calibration fixture) and judges its actual output -- no fixed expected
+output here, so there's nothing to score; read the printed unsupported/uncertain counts and compare against a
+prior run's output to judge better/worse. Confirmed working end to end: a fresh Khiva run produced a
+different report than the calibration fixture (34 claims, 2 unsupported, 2 uncertain) and the judge caught two
+more real, previously-unseen hallucinations (a wrong airport distance, a wrong ticket price range).
 
 Parked: completeness eval, after groundedness is trustworthy on live reports.
