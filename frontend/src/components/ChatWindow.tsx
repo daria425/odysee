@@ -10,9 +10,10 @@ interface ChatWindowProps {
   threadId: string;
   messages: ChatMessage[];
   onMessagesChange: (messages: ChatMessage[]) => void;
+  onTripStarted?: (tripId: string) => void;
 }
 
-export default function ChatWindow({ threadId, messages, onMessagesChange }: ChatWindowProps) {
+export default function ChatWindow({ threadId, messages, onMessagesChange, onTripStarted }: ChatWindowProps) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -20,13 +21,19 @@ export default function ChatWindow({ threadId, messages, onMessagesChange }: Cha
     const text = input.trim();
     if (!text || sending) return;
 
+    const isStart = text.startsWith("/start");
     const nextMessages: ChatMessage[] = [...messages, { role: "user", content: text }];
     onMessagesChange(nextMessages);
     setInput("");
     setSending(true);
+    // For /start, the trip_id the server creates is exactly this threadId — no need to wait for
+    // the response to know it, so open the report panel (and its websocket) immediately, giving
+    // the "watch it build" experience rather than a dead panel until the reply comes back.
+    if (isStart) onTripStarted?.(threadId);
     try {
       const response = await sendChatMessage(text, threadId);
       onMessagesChange([...nextMessages, { role: "assistant", content: response.chat_response }]);
+      if (isStart) onTripStarted?.(threadId);
     } catch {
       onMessagesChange([
         ...nextMessages,

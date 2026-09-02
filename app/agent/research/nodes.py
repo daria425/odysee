@@ -65,42 +65,60 @@ def web_research(state: WebSearchState, config: RunnableConfig):
 
     llm = ChatAnthropic(model_name=configuration.research_model,
                         temperature=0, api_key=os.getenv("ANTHROPIC_API_KEY"))
-    system_prompt = load_prompt("app/lib/prompts/web_researcher_prompt.txt")
+    profile = load_profile()
+    system_prompt = load_prompt("app/lib/prompts/web_researcher_prompt.txt", user_profile=profile)
     user_msg = f"Question: {state['question']}\n\nSearch results:\n{context}"
     response = llm.invoke(
-        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
+        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)], config)
 
     return {
         "sources_gathered": sources,
-        "web_research_result": [{"question": state["question"], "answer": response.content, "search_query": state["search_query"], "sources": sources}],
+        "web_research_result": [{"id": state["id"], "question": state["question"], "answer": response.content, "search_query": state["search_query"], "sources": sources}],
     }
 
 
 def should_regenerate(state: OverallState, config: RunnableConfig):
     configuration = Configuration.from_runnable_config(config)
+    confirmed_ids = set(state.get("confirmed_ids", []))
+    # Only judge ids not already confirmed — a confirmed id is settled and must never be re-judged
+    # or re-shown as pending again.
+    results = [r for r in state["web_research_result"] if r["id"] not in confirmed_ids]
+
     if state.get("reflection_count", 0) >= configuration.max_reflections:
-        return {"queries_to_regenerate": [], "reflection_count": state.get("reflection_count", 0) + 1}
+        logger.info("[should_regenerate] reflection cap reached, confirming remaining %d answers", len(results))
+        return {
+            "queries_to_regenerate": [],
+            "confirmed_ids": [r["id"] for r in results],
+            "reflection_count": state.get("reflection_count", 0) + 1,
+        }
+
     llm = ChatAnthropic(model_name=configuration.judge_model,
                         temperature=0, api_key=os.getenv("ANTHROPIC_API_KEY")).with_structured_output(RegenerateResponse)
     system_prompt = load_prompt("app/lib/prompts/should_regenerate_prompt.txt")
     user_msg = f"""
     Here is the list of web search queries and their results:
-    {state['web_research_result']}
+    {results}
     """
     response: RegenerateResponse = llm.invoke(
-        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
-    results = state["web_research_result"]
-    logger.info("[should_regenerate] round %d, flagging %d/%d answers", state.get("reflection_count", 0), len(response.queries_to_regenerate or []), len(results))
+        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)], config)
+    flagged = [item for item in (response.queries_to_regenerate or []) if 0 <= item.item_index < len(results)]
+    if len(flagged) != len(response.queries_to_regenerate or []):
+        logger.warning("[should_regenerate] judge returned out-of-range item_index, dropping invalid entries")
+    flagged_indices = {item.item_index for item in flagged}
+    logger.info("[should_regenerate] round %d, flagging %d/%d answers", state.get("reflection_count", 0), len(flagged_indices), len(results))
     queries_to_regenerate = [
         {
+            "id": results[item.item_index]["id"],
             "initial_user_question": results[item.item_index]["question"],
             "prev_generated_query": results[item.item_index]["search_query"],
             "output_feedback": item.feedback,
         }
-        for item in (response.queries_to_regenerate or [])
+        for item in flagged
     ]
+    newly_confirmed = [r["id"] for i, r in enumerate(results) if i not in flagged_indices]
     return {
         "queries_to_regenerate": queries_to_regenerate,
+        "confirmed_ids": newly_confirmed,
         "reflection_count": state.get("reflection_count", 0) + 1,
     }
 
@@ -111,22 +129,15 @@ def route_after_reflection(state: OverallState):
     return "finalize_answer"
 
 
-def finalize_answer(state: OverallState, config: RunnableConfig):
+def finalize_answer(state: OverallState):
+    """Deterministically assembles the final report markdown — no LLM call. Each web_research
+    answer is already profile-tailored and synthesized from its own sources; this just orders
+    and concatenates them as one section per question."""
     logger.info("[finalize_answer] %s", state["destination"])
-    configuration = Configuration.from_runnable_config(config)
-    llm = ChatAnthropic(model_name=configuration.synthesis_model,
-                        temperature=0.3, api_key=os.getenv("ANTHROPIC_API_KEY"))
-    profile = load_profile()
-    system_prompt = load_prompt("app/lib/prompts/finalize_answer_prompt.txt",
-                                destination=state["destination"], travel_date=state["travel_date"],
-                                user_profile=profile)
-    research = "\n\n".join(
-        f"Q: {item['question']}\nA: {item['answer']}" for item in state["web_research_result"]
-    )
-    user_msg = f"Here are the research findings:\n\n{research}"
-    response = llm.invoke(
-        [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
-    return {"report": response.content}
+    sections = sorted(state["web_research_result"], key=lambda item: item["id"])
+    body = "\n\n".join(f"## {item['question']}\n\n{item['answer']}" for item in sections)
+    report = f"# {state['destination']} Pre-Trip Briefing\n\n{body}"
+    return {"report": report}
 
 
 def regenerate_queries(state: OverallState, config: RunnableConfig):
@@ -143,8 +154,8 @@ def regenerate_queries(state: OverallState, config: RunnableConfig):
         [SystemMessage(content=system_prompt), HumanMessage(content=user_msg)])
     pending_queries = [
         {"question": item["initial_user_question"],
-            "search_query": new_query, "id": i}
-        for i, (item, new_query) in enumerate(zip(state["queries_to_regenerate"], response.queries))
+            "search_query": new_query, "id": item["id"]}
+        for item, new_query in zip(state["queries_to_regenerate"], response.queries)
     ]
     return {
         "pending_queries": pending_queries,

@@ -176,6 +176,17 @@ prompts/judges against the frozen fixture. So:
   check against the frozen `evals/calibration/` set — re-run that only when the judge prompt/architecture itself
   changes, not when the research graph changes.
 
+## Debugging Practice
+
+- **Before theorizing about asyncio/LangGraph/library internals, re-read your own recently-edited
+  code for leftover/duplicate blocks.** Burned a large chunk of a session chasing a "duplicate LLM
+  call" bug through `asyncio.as_completed` semantics, LangGraph's `astream` streaming model, and
+  multiple isolated repro scripts — the actual cause was a botched `Edit` call that left the old
+  pre-refactor function body still present below the new one, so every item ran through twice. A
+  single re-read of the full function (not just the diff) would have caught it immediately. First
+  debugging step: check for exactly this kind of self-inflicted slop before reaching for deeper
+  systemic theories.
+
 ## Known Issues / Gotchas
 
 - **Anthropic API rejects system-only message lists.** `anthropic.BadRequestError: messages: at least one message is required` — the Anthropic API requires at least one non-system message in the request; a `[SystemMessage(...)]`-only call fails even though the system prompt has content. Any templated user-facing content (e.g. the question a small structured-output LLM call is judging) must go in a separate `HumanMessage`, never interpolated into the system prompt string. If there's genuinely no user-relevant content, still send a minimal `HumanMessage` rather than omitting it.

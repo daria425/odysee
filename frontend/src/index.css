@@ -232,6 +232,12 @@ body {
   --a2ui-font-family-title: var(--sans);
 }
 
+.report-panel-note {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
 .report-panel-empty {
   display: flex;
   align-items: center;

@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar";
 import ChatWindow, { type ChatMessage } from "./components/ChatWindow";
 import ReportPanel from "./components/ReportPanel";
-import { listTrips, getTrip, getTripMessages, type Trip } from "./api";
+import { listTrips, getTripMessages, type Trip } from "./api";
+import { useTripWebSocket } from "./lib/useTripWebSocket";
 
 function newThreadId() {
   return crypto.randomUUID();
@@ -13,7 +14,7 @@ export default function App() {
   const [threadId, setThreadId] = useState<string>(newThreadId());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
-  const [activeTrip, setActiveTrip] = useState<Trip | null>(null);
+  const tripLive = useTripWebSocket(activeTripId);
 
   useEffect(() => {
     listTrips().then(setTrips).catch(() => setTrips([]));
@@ -23,20 +24,20 @@ export default function App() {
     setThreadId(newThreadId());
     setMessages([]);
     setActiveTripId(null);
-    setActiveTrip(null);
   }
 
   function handleSelectTrip(tripId: string) {
     setThreadId(tripId);
     setMessages([]);
     setActiveTripId(tripId);
-    setActiveTrip(null);
     getTripMessages(tripId)
       .then(setMessages)
       .catch(() => setMessages([]));
-    getTrip(tripId)
-      .then(setActiveTrip)
-      .catch(() => setActiveTrip(null));
+  }
+
+  function handleTripStarted(tripId: string) {
+    setActiveTripId(tripId);
+    listTrips().then(setTrips).catch(() => {});
   }
 
   return (
@@ -51,14 +52,19 @@ export default function App() {
         onNewChat={handleNewChat}
         onSelectTrip={handleSelectTrip}
       />
-      <div className={`main-split ${activeTrip ? "with-report" : ""}`}>
-        <ChatWindow threadId={threadId} messages={messages} onMessagesChange={setMessages} />
-        {activeTrip && (
+      <div className={`main-split ${activeTripId ? "with-report" : ""}`}>
+        <ChatWindow
+          threadId={threadId}
+          messages={messages}
+          onMessagesChange={setMessages}
+          onTripStarted={handleTripStarted}
+        />
+        {activeTripId && (
           <ReportPanel
-            surfaceId={activeTrip.trip_id}
-            report={activeTrip.research_report}
-            reportUi={activeTrip.research_report_ui}
-            status={activeTrip.research_status}
+            surfaceId={activeTripId}
+            report={tripLive.report}
+            sections={tripLive.sections}
+            status={tripLive.status ?? "not_started"}
           />
         )}
       </div>

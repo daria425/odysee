@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
@@ -49,6 +50,7 @@ manager = ConnectionManager()
 
 def _research_status_message(trip: Trip) -> dict:
     return {
+        "type": "status",
         "trip_id": trip.trip_id,
         "status": trip.research_status,
         "report": trip.research_report,
@@ -57,6 +59,32 @@ def _research_status_message(trip: Trip) -> dict:
         "research_started_at": trip.research_started_at,
         "research_updated_at": trip.research_updated_at,
     }
+
+
+async def _generate_and_broadcast_sections(store: MemoryStore, trip_id: str, confirmed: list[dict], config: dict) -> None:
+    """confirmed: list of {"id", "question", "answer"} for ids reflection just cleared this round.
+    Generates each one's A2UI card concurrently (they're independent Haiku calls), but persists and
+    broadcasts each one the instant it finishes rather than waiting for the whole round — retries
+    on one card (up to 3 attempts) shouldn't delay every other card in the same round. Persist calls
+    are still processed one at a time here (never concurrently), so there's no read-modify-write race
+    against research_report_ui even though generation itself runs in parallel."""
+    async def build_section(item: dict) -> dict | None:
+        surface_id = f"{trip_id}-{item['id']}"
+        section_md = f"## {item['question']}\n\n{item['answer']}"
+        try:
+            messages = await asyncio.to_thread(
+                generate_report_ui, section_md, surface_id, config)
+            return {"question_id": item["id"], "surface_id": surface_id, "messages": json.loads(messages)}
+        except ReportUiGenerationError as e:
+            logger.warning("[run_research] section report_ui generation failed trip=%s id=%s error=%s", trip_id, item["id"], e)
+            return None
+
+    for coro in asyncio.as_completed([build_section(item) for item in confirmed]):
+        section = await coro
+        if section is None:
+            continue
+        store.append_report_ui_sections(trip_id, [section])
+        await manager.broadcast(trip_id, {"type": "section_ui", "trip_id": trip_id, **section})
 
 
 async def run_research(store: MemoryStore, trip: Trip, langfuse_handler: CallbackHandler, should_generate_ui: bool = False):
@@ -78,19 +106,23 @@ async def run_research(store: MemoryStore, trip: Trip, langfuse_handler: Callbac
     }
 
     try:
-        result = await research_workflow.ainvoke(state, config)
-        store.update_research_status(
-            trip.trip_id, "done", report=result["report"])
-        logger.info("[run_research] done trip=%s", trip.trip_id)
+        answers: dict[int, dict] = {}
+        report: str | None = None
+        async for update in research_workflow.astream(state, config, stream_mode="updates"):
+            for node_name, node_output in update.items():
+                if node_name == "web_research":
+                    for item in node_output["web_research_result"]:
+                        answers[item["id"]] = item
+                elif node_name == "should_regenerate":
+                    confirmed_ids = node_output.get("confirmed_ids") or []
+                    if should_generate_ui and confirmed_ids:
+                        confirmed = [answers[i] for i in confirmed_ids]
+                        await _generate_and_broadcast_sections(store, trip.trip_id, confirmed, config)
+                elif node_name == "finalize_answer":
+                    report = node_output["report"]
 
-        if should_generate_ui:
-            try:
-                report_ui = generate_report_ui(result["report"], surface_id=trip.trip_id, config=config)
-                store.update_research_report_ui(trip.trip_id, report_ui)
-            except ReportUiGenerationError as e:
-                # Report itself is already saved above; the frontend falls back to
-                # rendering the raw markdown when research_report_ui is null.
-                logger.warning("[run_research] report_ui generation failed trip=%s error=%s", trip.trip_id, e)
+        store.update_research_status(trip.trip_id, "done", report=report)
+        logger.info("[run_research] done trip=%s", trip.trip_id)
     except Exception as e:
         store.update_research_status(trip.trip_id, "failed", error=str(e))
         logger.info("[run_research] failed trip=%s error=%s", trip.trip_id, e)
@@ -203,7 +235,7 @@ async def trip_status_ws(ws: WebSocket, trip_id: str):
     if trip is not None:
         await ws.send_json(_research_status_message(trip))
     else:
-        await ws.send_json({"trip_id": trip_id, "status": "unknown", "report": None, "error": None})
+        await ws.send_json({"type": "status", "trip_id": trip_id, "status": "unknown", "report": None, "error": None})
     try:
         while True:
             await ws.receive_text()

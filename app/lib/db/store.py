@@ -73,11 +73,21 @@ class MemoryStore:
                 )
         return self.get_trip(trip_id)
 
-    def update_research_report_ui(self, trip_id: str, report_ui: str) -> Trip | None:
+    def append_report_ui_sections(self, trip_id: str, sections: list[dict]) -> Trip | None:
+        """Upserts a batch of A2UI section entries (each {question_id, surface_id, messages}) into
+        research_report_ui, keyed by question_id. Takes the whole batch in one call — a single
+        read-modify-write — rather than one call per section, since concurrent per-section writes to
+        the same row would race (lost updates)."""
         with self._connect() as conn:
+            row = conn.execute(
+                "SELECT research_report_ui FROM trips WHERE trip_id = ?", (trip_id,)).fetchone()
+            existing = json.loads(row["research_report_ui"]) if row and row["research_report_ui"] else []
+            by_question_id = {s["question_id"]: s for s in existing}
+            for section in sections:
+                by_question_id[section["question_id"]] = section
             conn.execute(
                 "UPDATE trips SET research_report_ui = ? WHERE trip_id = ?",
-                (report_ui, trip_id),
+                (json.dumps(list(by_question_id.values())), trip_id),
             )
         return self.get_trip(trip_id)
 
