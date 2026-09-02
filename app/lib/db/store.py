@@ -30,7 +30,8 @@ class MemoryStore:
                     notes       TEXT,
                     research_status TEXT NOT NULL DEFAULT 'not_started',
                     research_report TEXT,
-                    research_error  TEXT, 
+                    research_report_ui TEXT,
+                    research_error  TEXT,
                     created_at  TEXT NOT NULL,
                     research_updated_at TEXT,
                     research_started_at TEXT
@@ -70,6 +71,14 @@ class MemoryStore:
                     "UPDATE trips SET research_status = ?, research_report = ?, research_error = ?, research_updated_at = ? WHERE trip_id = ?",
                     (status, report, error, now, trip_id),
                 )
+        return self.get_trip(trip_id)
+
+    def update_research_report_ui(self, trip_id: str, report_ui: str) -> Trip | None:
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE trips SET research_report_ui = ? WHERE trip_id = ?",
+                (report_ui, trip_id),
+            )
         return self.get_trip(trip_id)
 
     def get_trip(self, trip_id: str) -> Trip | None:
@@ -114,6 +123,7 @@ class MemoryStore:
             created_at=row["created_at"],
             research_status=row["research_status"],
             research_report=row["research_report"],
+            research_report_ui=row["research_report_ui"],
             research_error=row["research_error"],
             research_updated_at=row["research_updated_at"],
             research_started_at=row["research_started_at"],

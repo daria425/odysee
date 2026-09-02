@@ -12,6 +12,7 @@ class Trip(BaseModel):
     created_at: Optional[str] = None
     research_status: str = "not_started"  # not_started | running | done | failed
     research_report: Optional[str] = None
+    research_report_ui: Optional[str] = None
     research_error: Optional[str] = None
     research_updated_at: Optional[str] = None
     research_started_at: Optional[str] = None

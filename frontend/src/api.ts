@@ -10,6 +10,7 @@ export interface Trip {
   created_at: string | null;
   research_status: string;
   research_report: string | null;
+  research_report_ui: string | null;
   research_error: string | null;
   research_updated_at: string | null;
   research_started_at: string | null;

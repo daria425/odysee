@@ -93,6 +93,7 @@ App-owned tables (created by `MemoryStore._init_db()` in `app/lib/db/store.py`):
   created_at (TEXT)
   research_status (TEXT)       -- not_started | running | done | failed
   research_report (TEXT)
+  research_report_ui (TEXT)    -- A2UI JSON compiled from research_report, or NULL (see A2UI section below)
   research_error (TEXT)
   research_started_at (TEXT)   -- set when research_status becomes "running"
   research_updated_at (TEXT)   -- set on every research_status update
@@ -183,22 +184,35 @@ prompts/judges against the frozen fixture. So:
 
 ### Frontend Integration
 
-Building a React shell (chat window + header "Odysee" + sidebar with New Chat / Trips). Plan is to render
-the research report via [A2UI](https://a2ui.org/) (JSON-driven UI generation) rather than raw markdown, so
-the shell should stay a thin/generic renderer rather than accumulating bespoke report-display components.
-For now, run locally without Docker: backend via `poetry run` / `python -m app.main` (or however it's
-currently started — see `app/main.py`), frontend via `npm run dev`. Docker (for both self and "someone else
-clones the repo and runs it") and CI ("build backend + frontend on commit") are deferred — noted here so
-they aren't lost, not because they're unimportant.
+React shell (`frontend/`, Vite) — chat window + header "Odysee" + sidebar (New Chat / Trips) — shipped in
+`7ccf178`, backed by `GET /trips`, `GET /trip/{id}`, `GET /trip/{id}/messages` and `CORSMiddleware` on the
+FastAPI backend. Run locally without Docker: backend via `poetry run uvicorn app.main:app --reload`, frontend
+via `npm run dev` (in `frontend/`). Docker and CI are still deferred — see below.
 
-Gaps identified when scoping this (2026-09-01), not yet closed:
+### A2UI report rendering
 
-- **No `GET /trips` or `GET /trip/{id}` REST endpoint.** Only `POST /chat` and `/ws/trip/{trip_id}` exist
-  today. The sidebar's Trips list and "load an existing trip" need at least `GET /trips` (list) and
-  `GET /trip/{id}` (fetch one, including `research_report`). Previously deferred deliberately in an earlier
-  session "until an actual client is wired in" — that's now.
-- **No CORS middleware in `app/main.py`.** A frontend dev server (e.g. Vite) on a different port than
-  FastAPI will be blocked by the browser until `CORSMiddleware` is added.
+The research report renders as native components (not raw markdown) via [A2UI](https://a2ui.org/), split
+across two independent producers feeding one renderer:
+
+- **Primary path**: `app/lib/report_ui.py`'s `generate_report_ui()` — a cheap-model (`claude-haiku-4-5`)
+  call that compiles the report Markdown into A2UI JSON (unconstrained plain-text generation + client-side
+  schema validation + retry, not provider-side structured output — see the module docstring for why). Wired
+  into `run_research()` in `main.py` behind `should_generate_ui` (only `/start` passes `True`); persisted to
+  `trips.research_report_ui`. On failure after all retries, it just logs and leaves the column `NULL` — it
+  never fails the research request itself, since `research_report` (the markdown) is already saved by then.
+- **Fallback path**: `frontend/src/lib/markdownToA2ui.ts` — a deterministic (no LLM, can't fail) Markdown →
+  A2UI JSON converter mirroring the same `##`→Card mapping the LLM prompt uses. `ReportPanel.tsx` uses this
+  whenever `research_report_ui` is `null` (generation hasn't run yet for older trips, or failed).
+- **Renderer**: `@a2ui/react` + `@a2ui/web_core`, both pinned to the `v0_9` subpath (matches the Python
+  `a2ui-core` package's `SPEC_VERSION`) — `MessageProcessor` processes either producer's message array,
+  `<A2uiSurface>` renders it. **Gotcha**: don't memoize/reuse a single `MessageProcessor` instance across
+  re-renders — React StrictMode's dev-mode double-invoke will call `createSurface` twice on it and throw
+  `A2uiStateError: Surface already exists`. Create a fresh one per effect run instead (see `ReportPanel.tsx`).
+- Report view is a split layout — `ChatWindow` + `ReportPanel` side by side (`.main-split` in `index.css`) —
+  shown whenever a trip is selected, independent of and untouched by the chat flow itself.
+
+### Still open
+
 - **No Dockerfile / docker-compose anywhere in the repo.** Needed later for "run locally via Docker,
   including by someone else who just clones the repo": a backend Dockerfile (poetry-based), a frontend
   Dockerfile, and a `docker-compose.yml` wiring both plus env vars from `.env`.
@@ -208,6 +222,3 @@ Gaps identified when scoping this (2026-09-01), not yet closed:
   is mounted as a volume in compose. Needs a volume mount when Docker is set up, not a code change.
 - **No CI config** (no `.github/workflows`) for "build backend + frontend on commit" — a separate GitHub
   Actions setup, not yet started.
-- **DB already supports multiple trips** — checked, no gap: `trips.trip_id` is the primary key, and
-  `MemoryStore.create_trip` / `list_trips` / `get_trip` already support N independent trips.
-  `list_trips()` orders by `created_at DESC`, which is enough to back a Trips sidebar list as-is.

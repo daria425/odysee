@@ -13,6 +13,7 @@ from app.agent.research.graph import workflow as research_workflow
 from app.lib.models import TravelResponse, APIChatResponse, APIChatRequest
 from app.lib.db.models import Trip
 from app.lib.db.store import DB_PATH, MemoryStore
+from app.lib.report_ui import generate_report_ui, ReportUiGenerationError
 from app.lib.utils import parse_start_command
 
 logging.basicConfig(level=logging.INFO,
@@ -51,13 +52,14 @@ def _research_status_message(trip: Trip) -> dict:
         "trip_id": trip.trip_id,
         "status": trip.research_status,
         "report": trip.research_report,
+        "report_ui": trip.research_report_ui,
         "error": trip.research_error,
         "research_started_at": trip.research_started_at,
         "research_updated_at": trip.research_updated_at,
     }
 
 
-async def run_research(store: MemoryStore, trip: Trip, langfuse_handler: CallbackHandler):
+async def run_research(store: MemoryStore, trip: Trip, langfuse_handler: CallbackHandler, should_generate_ui: bool = False):
     store.update_research_status(trip.trip_id, "running")
     await manager.broadcast(trip.trip_id, _research_status_message(store.get_trip(trip.trip_id)))
 
@@ -80,6 +82,15 @@ async def run_research(store: MemoryStore, trip: Trip, langfuse_handler: Callbac
         store.update_research_status(
             trip.trip_id, "done", report=result["report"])
         logger.info("[run_research] done trip=%s", trip.trip_id)
+
+        if should_generate_ui:
+            try:
+                report_ui = generate_report_ui(result["report"], surface_id=trip.trip_id, config=config)
+                store.update_research_report_ui(trip.trip_id, report_ui)
+            except ReportUiGenerationError as e:
+                # Report itself is already saved above; the frontend falls back to
+                # rendering the raw markdown when research_report_ui is null.
+                logger.warning("[run_research] report_ui generation failed trip=%s error=%s", trip.trip_id, e)
     except Exception as e:
         store.update_research_status(trip.trip_id, "failed", error=str(e))
         logger.info("[run_research] failed trip=%s error=%s", trip.trip_id, e)
@@ -159,7 +170,7 @@ async def chat(request: APIChatRequest, fastapi_request: Request):
         logger.info("[chat:/start] trip created id=%s name=%s",
                     trip.trip_id, trip.name)
         asyncio.create_task(run_research(
-            store, trip, fastapi_request.app.state.langfuse_handler))
+            store, trip, fastapi_request.app.state.langfuse_handler, should_generate_ui=True))
         msg = f"Trip '{trip.name}' created. Destinations: {', '.join(trip.destinations)}. Date: {trip.start_date}. Researching now — connect to /ws/trip/{trip.trip_id} for status."
         return APIChatResponse(thread_id=request.thread_id, langfuse_session_id=request.langfuse_session_id, chat_response=msg)
 
