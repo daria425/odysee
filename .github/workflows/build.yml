@@ -15,7 +15,7 @@ jobs:
       - name: Install poetry
         run: pipx install poetry
       - name: Install dependencies
-        run: poetry install
+        run: poetry install --no-root
       - name: Run tests
         run: poetry run pytest
 
