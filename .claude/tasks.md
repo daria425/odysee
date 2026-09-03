@@ -43,7 +43,7 @@ Rules for the daily agent (see routine prompt for the full version):
       `frontend/src/index.css` — use the `ui-ux-pro-max` skill. Explicitly scoped to styling/layout
       only — no changes to component logic, data flow, or props.
       Key Tasks:
-  - Use Three.js/React-Three to create a 3D background in the report panel. Reference is located in /home/daria/projects/orchestrator-worker-travel-agent/.claude/references/three-js-ref.jpeg. This has a translucent white overlay (~70%) + blur for a glass effect and readability of report cards.
+  - Use Three.js/React-Three to create a 3D background in the report panel. Reference is located in /home/daria/projects/orchestrator-worker-travel-agent/.claude/references/three-js-ref.jpeg. This has a translucent white overlay (~70%) + blur for a glass effect and readability of report cards. You have a list of three-js skills available (all prefixed with threejs-\*\*)
   - Use react framer for smooth progressive rendering of report cards. Once data is available each card should float upwards rather than jump at the user.
 
   Testing note: the routine's environment does not have `ANTHROPIC_API_KEY`/`TAVILY_API_KEY` set,
