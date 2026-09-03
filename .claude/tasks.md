@@ -33,6 +33,11 @@ Rules for the daily agent (see routine prompt for the full version):
       Done means: fixtures confirmed current (regenerated if not), eval scripts run clean against them,
       findings recorded in the changelog.
 
+      Note: the routine's environment does not have `ANTHROPIC_API_KEY`/`TAVILY_API_KEY` set
+      (deliberate — not wired up for this sprint). Regenerating fixtures requires a live graph run,
+      which needs those. Don't burn effort trying to work around this — mark BLOCKED immediately
+      with that reason and move to the next task. Daria will review/run this herself after the trip.
+
 - [ ] **3. Frontend design polish pass**
       Visual-only pass over `frontend/src/components/{Sidebar,ChatWindow,ReportPanel}.tsx` and
       `frontend/src/index.css` — use the `ui-ux-pro-max` skill. Explicitly scoped to styling/layout
@@ -41,7 +46,18 @@ Rules for the daily agent (see routine prompt for the full version):
   - Use Three.js/React-Three to create a 3D background in the report panel. Reference is located in /home/daria/projects/orchestrator-worker-travel-agent/.claude/references/three-js-ref.jpeg. This has a translucent white overlay (~70%) + blur for a glass effect and readability of report cards.
   - Use react framer for smooth progressive rendering of report cards. Once data is available each card should float upwards rather than jump at the user.
 
-  Done means: `npm run lint` + `npm run build` still green, before/after noted in the changelog. Screenshots as evidence once complete.
+  Testing note: the routine's environment does not have `ANTHROPIC_API_KEY`/`TAVILY_API_KEY` set,
+  so don't run the live research graph to exercise this. Instead add a **temporary** mock/fixture
+  of report card data (e.g. reuse the shape of `evals/reports/khiva_2026-10_web_research_result.json`
+  or a hand-built stub matching `research_report_ui`'s section array) to drive the ReportPanel and
+  verify the float-up animation and glass-card styling render correctly. This mock is scaffolding
+  for visual testing only — remove it once verified, don't leave it wired into the real app path,
+  and flag in the changelog that Daria should review the animation/visuals live once she's back
+  (with real data) since this was only tested against mocked input.
+
+  Done means: `npm run lint` + `npm run build` still green, before/after noted in the changelog,
+  screenshots as evidence, temporary mock removed before committing (or clearly isolated in a
+  dev-only fixture file, never touching the real request path).
 
 - [ ] **4. Trip comparison mode**
       New endpoint (e.g. `GET /trips/compare?ids=<id1>,<id2>,...`) making a request to claude sonnet with user profile to compare trips side by side: destinations, dates, and comparable facts pulled out of each
@@ -57,6 +73,14 @@ Rules for the daily agent (see routine prompt for the full version):
       before it in the backlog — so when this task is implemented, no trip has review data yet.
       Handle that gracefully (empty/no reviews is a normal case, not an error) rather than
       assuming the columns exist.
+
+      Note: the routine's environment does not have `ANTHROPIC_API_KEY` set (deliberate — not
+      wired up for this sprint), so the actual Sonnet comparison call can't be exercised live.
+      Build the endpoint + prompt construction fully, but don't burn effort trying to work around
+      the missing key to fully verify the LLM call end-to-end — mark that specific verification
+      step BLOCKED with that reason (the rest of the task, e.g. the extraction/data-shaping logic
+      and frontend, can still be completed and tested independently). Daria will verify the live
+      call herself after the trip.
 
       Done means:
       - `GET /trips/compare?ids=...` tested (pytest), returns comparable facts for 2+ real trips
