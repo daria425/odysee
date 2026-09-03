@@ -1,11 +1,10 @@
 from langchain_core.messages import AIMessage
-from langgraph.graph import END
 from app.agent.chat.graph import should_continue
 
 
-def test_routes_to_end_when_no_tool_calls():
+def test_routes_to_format_response_when_no_tool_calls():
     state = {"messages": [AIMessage(content="Here is some info.")]}
-    assert should_continue(state) == END
+    assert should_continue(state) == "format_response"
 
 
 def test_routes_to_format_response_when_respond_tool_called():

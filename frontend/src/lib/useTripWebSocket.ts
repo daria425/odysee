@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import type { A2uiMessage } from "@a2ui/web_core/v0_9";
 
 const WS_BASE = "ws://localhost:8000";
 
 export interface ReportSection {
   question_id: number;
   surface_id: string;
-  messages: unknown[];
+  messages: A2uiMessage[];
 }
 
 interface StatusMessage {
@@ -20,7 +21,7 @@ interface SectionUiMessage {
   type: "section_ui";
   question_id: number;
   surface_id: string;
-  messages: unknown[];
+  messages: A2uiMessage[];
 }
 
 export interface TripWebSocketState {

@@ -27,7 +27,7 @@ def test_call_model_adds_response():
     mock_llm.bind_tools.return_value = mock_llm
     mock_llm.invoke.return_value = AIMessage(content="Here's some info")
 
-    call_model = make_call_model(mock_llm, "", [])
+    call_model = make_call_model(mock_llm, "", [], MagicMock())
     mock_state = {"messages": [HumanMessage(
         content="What's some nice coffee shops around Vera?")]}
     res = call_model(mock_state)
@@ -52,7 +52,7 @@ def test_call_model_adds_tool_calls():
             }
         }]
     )
-    call_model = make_call_model(mock_llm, "", [])
+    call_model = make_call_model(mock_llm, "", [], MagicMock())
     mock_state = {"messages": [HumanMessage(
         content="What's some nice coffee shops around Vera?")]}
     res = call_model(mock_state)

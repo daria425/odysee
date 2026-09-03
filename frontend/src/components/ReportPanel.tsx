@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { MessageProcessor } from "@a2ui/web_core/v0_9";
 import { A2uiSurface, basicCatalog, type ReactComponentImplementation } from "@a2ui/react/v0_9";
-import type { SurfaceModel } from "@a2ui/web_core/v0_9";
+import type { A2uiMessage, SurfaceModel } from "@a2ui/web_core/v0_9";
 import { markdownToA2uiMessages } from "../lib/markdownToA2ui";
 import type { ReportSection } from "../lib/useTripWebSocket";
 
 interface SectionSurfaceProps {
-  messages: unknown[];
+  messages: A2uiMessage[];
 }
 
 /** One independent A2UI surface for a single section/card. A fresh MessageProcessor per effect
